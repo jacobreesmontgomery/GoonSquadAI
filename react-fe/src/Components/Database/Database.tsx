@@ -59,7 +59,7 @@ export default function Database() {
 
     useEffect(() => {
         axios
-            .get("http://localhost:5001/api/database")
+            .get("http://localhost:5001/api/activities/detailed-stats")
             .then((response) => {
                 setHeaderStats(filterHeaderStats(response.data.headerStats));
                 setRowData(filterRowData(response.data.rowData));

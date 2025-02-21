@@ -18,6 +18,7 @@ const backendUrl = 'http://localhost:5000';
 
 // Route to handle requests and forward to FastAPI backend
 app.get('/api/activities/basic-stats', async (req, res) => {
+    console.log("Received request to /api/activities/basic-stats")
     try {
         const response = await axios.get(`${backendUrl}/api/activities/basic-stats`);
         res.json(response.data);
@@ -29,6 +30,7 @@ app.get('/api/activities/basic-stats', async (req, res) => {
 });
 
 app.get('/api/activities/detailed-stats', async (req, res) => {
+    console.log("Received request to /api/activities/detailed-stats")
     try {
         const response = await axios.get(`${backendUrl}/api/activities/detailed-stats`);
         res.json(response.data);
