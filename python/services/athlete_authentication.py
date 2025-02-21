@@ -5,8 +5,8 @@ from os import getenv
 
 from .strava import StravaAuthorization, StravaAPI
 from .database import DatabaseService
-from dao.strava_activities_dao import StravaActivitiesDao
-from dao.strava_athlete_dao import StravaAthleteDao
+from dao.strava_activities import StravaActivitiesDao
+from dao.strava_athlete import StravaAthleteDao
 
 # VARIABLES
 load_dotenv()
