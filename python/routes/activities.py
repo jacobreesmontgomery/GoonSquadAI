@@ -1,5 +1,9 @@
 from fastapi import APIRouter, Request
 
+from utils.simple_logger import SimpleLogger
+
+logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+
 activities_router = APIRouter()
 
 
@@ -14,6 +18,7 @@ class ActivitiesAPI:
         Retrieves all activities for the authenticated athlete.
         """
         # TODO: Implement this method
+        logger.info("Getting activities")
         pass
 
     @activities_router.get("/activities/detailed-stats")
@@ -22,4 +27,5 @@ class ActivitiesAPI:
         Retrieves detailed statistics for all activities for the authenticated athlete.
         """
         # TODO: Implement this method
+        logger.info("Getting detailed activities")
         pass
