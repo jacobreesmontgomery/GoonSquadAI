@@ -2,3 +2,4 @@ venv
 **/.env
 **/tsconfig.json
 .vscode
+**/__pycache__

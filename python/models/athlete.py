@@ -25,3 +25,25 @@ class Athlete(Base):
             f"<Athlete(athlete_id={self.athlete_id}, athlete_name={self.athlete_name}, "
             f"email={self.email})>"
         )
+
+    def convert_to_schema_description(self):
+        """
+        Converts the Athlete SQLAlchemy model to an LLM-interpretable schema description.
+        """
+
+        schema_description = f"""
+        Table: strava_api.athletes
+        Description: This table stores information about Strava athletes, including their identifiers, 
+        authentication tokens, and contact details.
+
+        Columns:
+        - athlete_id (BIGINT, PK): Unique identifier for the athlete.
+        - athlete_name (STRING, NOT NULL): Name of the athlete.
+        - refresh_token (STRING, NOT NULL): OAuth refresh token for authentication.
+        - email (STRING, UNIQUE, NOT NULL): Athlete's email address (must be unique).
+
+        Notes:
+        - Primary Key: athlete_id
+        """
+
+        return schema_description.strip()

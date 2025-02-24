@@ -73,3 +73,52 @@ class Activity(Base):
             f"<Activity(activity_id={self.activity_id}, athlete={self.athlete}, "
             f"distance_mi={self.distance_mi}, moving_time={self.moving_time})>"
         )
+
+    def convert_to_schema_description(self):
+        """
+        Converts the Activity SQLAlchemy model to an LLM-interpretable schema description.
+        """
+
+        schema_description = f"""
+        Table: strava_api.activities
+        Description: This table stores Strava run activities, including metadata about the activity, 
+        performance metrics, and engagement details.
+
+        Columns:
+        - activity_id (BIGINT, PK): Unique identifier for the activity.
+        - athlete_id (BIGINT, FK -> strava_api.athletes.athlete_id, NOT NULL): Athlete associated with the activity.
+        - name (STRING, NOT NULL): Name of the activity.
+        - moving_time (TIME, NOT NULL): Time spent moving (HH:MM:SS).
+        - moving_time_s (INTEGER, NOT NULL): Moving time in seconds.
+        - distance_mi (FLOAT, NOT NULL): Distance covered in miles.
+        - pace_min_mi (TIME, NULL): Average pace in minutes per mile.
+        - avg_speed_ft_s (FLOAT(2), NOT NULL): Average speed in feet per second.
+        - full_datetime (DATETIME, NULL): Full timestamp of the activity.
+        - time (TIME, NOT NULL): Time of day when the activity took place.
+        - week_day (STRING, NOT NULL): Day of the week (e.g., MON-SUN).
+        - month (INTEGER, NOT NULL): Month of the year (1-12).
+        - day (INTEGER, NOT NULL): Day of the month (1-31).
+        - year (INTEGER, NOT NULL): Year of the activity (e.g., 2024).
+        - spm_avg (FLOAT, NULL): Average steps per minute.
+        - hr_avg (FLOAT, NULL): Average heart rate during the activity.
+        - wkt_type (INTEGER, NULL): Workout type classification.
+        - description (TEXT, NULL): Additional notes or description of the activity.
+        - total_elev_gain_ft (FLOAT, NULL): Total elevation gain in feet.
+        - manual (BOOLEAN, NOT NULL): Whether the activity was manually logged.
+        - max_speed_ft_s (FLOAT, NULL): Maximum speed in feet per second.
+        - calories (FLOAT, NULL): Calories burned during the activity.
+        - achievement_count (INTEGER, NULL): Number of achievements earned.
+        - kudos_count (INTEGER, NULL): Number of kudos received.
+        - comment_count (INTEGER, NULL): Number of comments received.
+        - athlete_count (INTEGER, NULL): Number of athletes involved in the activity.
+        - rpe (INTEGER, NULL): Rate of perceived exertion (1-10).
+        - rating (INTEGER, NULL): User rating of the activity (1-10).
+        - avg_power (INTEGER, NULL): Average power output in watts.
+        - sleep_rating (INTEGER, NULL): Sleep rating on the day of activity (1-10).
+        
+        Notes: 
+        - Primary Key: activity_id
+        - Foreign Key: athlete_id references strava_api.athletes.athlete_id
+        """
+
+        return schema_description.strip()
