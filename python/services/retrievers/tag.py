@@ -4,7 +4,8 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from prompts.tag import tag_prompt
 from models.activity import Activity
 from models.athlete import Athlete
-from database import DatabaseService
+from models.chat import ChatResponse
+from services.database import DatabaseService
 from services.openai import OpenAIService
 from utils.simple_logger import SimpleLogger
 
@@ -45,7 +46,7 @@ class TAGRetriever:
         schema_desc = f"{activity_desc}\n{athlete_desc}"
         return schema_desc
 
-    def clean_query(query: str) -> str:
+    def clean_query(self, query: str) -> str:
         """
         Cleans the LLM-generated SQL query by removing Markdown-style formatting.
 
@@ -121,14 +122,14 @@ class TAGRetriever:
 
         return result, len(result), completion_id
 
-    def process_tag_query(self, user_question: str, gpt_model: str = None) -> str:
+    def process(self, user_question: str, gpt_model: str = None) -> ChatResponse:
         """
-        Processes the TAG query and returns the results.
+        Processes the TAG query and returns the AI response.
 
         :param user_question: The user's question.
         :param gpt_model: The GPT model to use for generating the query (e.g., "gpt-4o-mini").
 
-        :return: The query results, the number of results, and the completion ID.
+        :return: The chat response.
         """
 
         result, num_rows, completion_id = self.execute_query(
@@ -170,4 +171,4 @@ class TAGRetriever:
         )
         self.logger.debug(f"\n{ai_response}")
 
-        return ai_response
+        return ChatResponse(response=ai_response)

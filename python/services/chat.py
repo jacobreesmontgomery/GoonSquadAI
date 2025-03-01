@@ -1,12 +1,18 @@
+from services.retrievers.tag import TAGRetriever
+from models.chat import ChatResponse
+
+
 class ChatService:
     def __init__(self):
-        self.chat = []
+        # Eventually we'll need an intent router to determine which retriever to use
+        self.retriever = TAGRetriever()
 
-    def add_message(self, message):
-        self.chat.append(message)
+    def process(self, user_question: str) -> ChatResponse:
+        """
+        Processes a chat message.
 
-    def get_messages(self):
-        return self.chat
+        :param user_question: The user's question.
 
-    def clear(self):
-        self.chat = []
+        :return: The chat response.
+        """
+        return self.retriever.process(user_question=user_question)

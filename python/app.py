@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from uvicorn import run
 
 from routes.activities import activities_router
+from routes.chat import chat_router
 
 app = FastAPI(
     title="API Documentation",
@@ -23,6 +24,11 @@ app.include_router(
     router=activities_router,
     prefix="/api/v1",
     tags=["Activities"],
+)
+app.include_router(
+    router=chat_router,
+    prefix="/api/v1",
+    tags=["Chat"],
 )
 
 # Enable CORS
