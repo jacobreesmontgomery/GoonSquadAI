@@ -41,6 +41,18 @@ app.get('/api/activities/detailed-stats', async (req, res) => {
     }
 });
 
+app.post('/api/chat', async (req, res) => {
+    console.log("Received request to /api/chat")
+    try {
+        const response = await axios.post(`${backendUrl}/api/chat`, req.body);
+        res.json(response.data);
+    } catch (error) {
+        res.status(error.response ? error.response.status : 500).json({
+            message: error.message,
+        });
+    }
+});
+
 app.get('/api/new-athlete/strava-auth', async (req, res) => {
     console.log('Redirecting to Strava OAuth');
     res.redirect(`${backendUrl}/api/new-athlete`);
