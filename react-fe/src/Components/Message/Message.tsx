@@ -1,3 +1,6 @@
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 import styled from "styled-components";
 
 const MessageWrapper = styled.div<{ $sender: "user" | "bot" }>`
@@ -23,9 +26,21 @@ type MessageProps = {
 };
 
 export default function Message({ text, sender }: MessageProps) {
+    // NOTE: AI responses are markdown-formatted, so we must render them as such.
     return (
         <MessageWrapper $sender={sender}>
-            <MessageBubble $sender={sender}>{text}</MessageBubble>
+            <MessageBubble $sender={sender}>
+                {sender === "user" ? (
+                    text
+                ) : (
+                    <Markdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                    >
+                        {text}
+                    </Markdown>
+                )}
+            </MessageBubble>
         </MessageWrapper>
     );
 }
