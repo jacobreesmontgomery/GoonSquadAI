@@ -11,6 +11,7 @@ const NavbarContainer = styled.div`
 
 const NavbarTitle = styled.h1`
     margin: 0;
+    height: 100%;
 `;
 
 const NavbarLinks = styled.div`
@@ -35,6 +36,7 @@ export default function Navbar() {
             <NavbarTitle>Strava API</NavbarTitle>
             <NavbarLinks>
                 <NavbarLink href="/">Home</NavbarLink>
+                <NavbarLink href="/chat">Chat</NavbarLink>
                 <NavbarLink href="/basic-stats">Basic Stats</NavbarLink>
                 <NavbarLink href="/detailed-stats">Database</NavbarLink>
             </NavbarLinks>
