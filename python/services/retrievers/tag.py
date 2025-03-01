@@ -4,7 +4,8 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from prompts.tag import tag_prompt
 from models.activity import Activity
 from models.athlete import Athlete
-from models.chat import ChatResponse
+from models.chat import ChatResponse, ChatResponseMeta
+from models.base import APIResponsePayload
 from services.database import DatabaseService
 from services.openai import OpenAIService
 from utils.simple_logger import SimpleLogger
@@ -98,8 +99,8 @@ class TAGRetriever:
 
         self.logger.debug(f"Messages being fed in to the LLM:\n{messages}")
         query_result = self.openai_service.process_request(
-            model=gpt_model if gpt_model else self.openai_service.model,
             messages=messages,
+            model=gpt_model if gpt_model else self.openai_service.model,
         )
         completion_id = query_result.id
         self.logger.debug(f"Chat completed: {completion_id}")
@@ -122,14 +123,16 @@ class TAGRetriever:
 
         return result, len(result), completion_id
 
-    def process(self, user_question: str, gpt_model: str = None) -> ChatResponse:
+    def process(
+        self, user_question: str, gpt_model: str = None
+    ) -> APIResponsePayload[ChatResponse, ChatResponseMeta]:
         """
         Processes the TAG query and returns the AI response.
 
         :param user_question: The user's question.
         :param gpt_model: The GPT model to use for generating the query (e.g., "gpt-4o-mini").
 
-        :return: The chat response.
+        :return The response payload.
         """
 
         result, num_rows, completion_id = self.execute_query(
@@ -171,4 +174,7 @@ class TAGRetriever:
         )
         self.logger.debug(f"\n{ai_response}")
 
-        return ChatResponse(response=ai_response)
+        return APIResponsePayload(
+            data=ChatResponse(response=ai_response),
+            meta=ChatResponseMeta(completion_id=completion_id),
+        )

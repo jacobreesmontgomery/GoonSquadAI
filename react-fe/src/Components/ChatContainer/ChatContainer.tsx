@@ -1,11 +1,8 @@
 import styled from "styled-components";
+
 import { Message } from "Components/Message";
 import { MessageInput } from "Components/MessageInput";
-
-type MessageType = {
-    text: string;
-    sender: "user" | "bot";
-};
+import { MessageType } from "Constants/types/chat";
 
 const Container = styled.div`
     display: flex;

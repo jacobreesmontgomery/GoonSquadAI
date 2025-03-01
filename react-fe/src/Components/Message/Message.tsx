@@ -3,14 +3,16 @@ import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import styled from "styled-components";
 
-const MessageWrapper = styled.div<{ $sender: "user" | "bot" }>`
+import { USER_TYPES } from "Constants/types/chat";
+
+const MessageWrapper = styled.div<{ $sender: USER_TYPES }>`
     display: flex;
     justify-content: ${(props) =>
         props.$sender === "user" ? "flex-end" : "flex-start"};
     margin-bottom: 1rem;
 `;
 
-const MessageBubble = styled.div<{ $sender: "user" | "bot" }>`
+const MessageBubble = styled.div<{ $sender: USER_TYPES }>`
     max-width: 65%;
     padding: 0.625rem;
     border-radius: 0.75rem;
@@ -22,7 +24,7 @@ const MessageBubble = styled.div<{ $sender: "user" | "bot" }>`
 
 type MessageProps = {
     text: string;
-    sender: "user" | "bot";
+    sender: USER_TYPES;
 };
 
 export default function Message({ text, sender }: MessageProps) {
@@ -30,7 +32,7 @@ export default function Message({ text, sender }: MessageProps) {
     return (
         <MessageWrapper $sender={sender}>
             <MessageBubble $sender={sender}>
-                {sender === "user" ? (
+                {sender === USER_TYPES.USER ? (
                     text
                 ) : (
                     <Markdown

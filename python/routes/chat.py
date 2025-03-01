@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from models.base import APIResponsePayload, Empty
-from models.chat import ChatRequest, ChatResponse
+from models.base import APIRequestPayload, APIResponsePayload, Empty
+from models.chat import ChatRequest, ChatRequestMeta, ChatResponse, ChatResponseMeta
 from services.chat import ChatService
 from utils.simple_logger import SimpleLogger
 
@@ -24,18 +24,20 @@ class ChatAPI:
         response_model=APIResponsePayload[ChatResponse, Empty],
     )
     async def process_chat_message(
-        request: ChatRequest,
-    ) -> APIResponsePayload[ChatResponse, Empty]:
+        request: APIRequestPayload[ChatRequest, ChatRequestMeta],
+    ) -> APIResponsePayload[ChatResponse, ChatResponseMeta]:
         """
         Retrieves all activities for the authenticated athlete.
 
         :param request: The request object.
 
-        :return: The chat response.
+        :return The response payload.
         """
 
-        logger.info(f"Processing chat message: {request.text}")
+        logger.info(f"Processing chat message: {request.data.text}")
+        response_payload = chat_service.process(
+            user_question=request.data.text,
+        )
+        logger.info(f"Chat message processed.")
 
-        response = chat_service.process(user_question=request.text)
-
-        return APIResponsePayload(data=response, meta=Empty())
+        return response_payload

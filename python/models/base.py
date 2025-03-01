@@ -14,6 +14,18 @@ class Empty(BaseModel):
     pass
 
 
+class APIRequestPayload(GenericModel, Generic[DataT, MetaT]):
+    """
+    A model representing the payload of an API reqiest.
+
+    :param data: The data of the request.
+    :param meta: The metadata of the request.
+    """
+
+    data: DataT
+    meta: MetaT | Empty = Empty()
+
+
 class APIResponsePayload(GenericModel, Generic[DataT, MetaT]):
     """
     A model representing the payload of an API response.
