@@ -42,7 +42,7 @@ app.get('/api/activities/detailed-stats', async (req, res) => {
 });
 
 app.post('/api/chat', async (req, res) => {
-    console.log("Received request to /api/chat with body: ", req.body)
+    console.log("Received request to /api/chat")
     try {
         const response = await axios.post(`${backendUrl}/api/v1/chat`, req.body);
         res.json(response.data);

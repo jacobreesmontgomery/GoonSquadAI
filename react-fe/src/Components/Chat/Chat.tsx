@@ -32,10 +32,9 @@ export default function Chat() {
             };
         });
 
-        // TODO: Test this out using debugger mode
         const body = {
             data: {
-                messages: conversation?.Messages || [],
+                messages: updatedMessages || [],
             },
             meta: {},
         };

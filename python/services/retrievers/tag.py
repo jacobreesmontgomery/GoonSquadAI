@@ -91,12 +91,24 @@ class TAGRetriever:
         if self.error_msg:
             messages.append({"role": RoleTypes.DEVELOPER, "content": self.error_msg})
 
-        messages.append(
-            {
-                "role": RoleTypes.USER,
-                "content": f"{tag_prompt.format(schema_description=schema_desc, conversation=messages, user_question=user_question)}",
-            }
-        )
+        if not any(
+            msg["content"].startswith(tag_prompt.split("{")[0]) for msg in messages
+        ):
+            # Only append the full TAG prompt if it's not already in the messages
+            messages.append(
+                {
+                    "role": RoleTypes.DEVELOPER,
+                    "content": f"{tag_prompt.format(schema_description=schema_desc, conversation=messages, user_question=user_question)}",
+                }
+            )
+        else:
+            # TODO: Seems to be working well, but need to test more
+            messages.append(
+                {
+                    "role": RoleTypes.DEVELOPER,
+                    "content": f"Same as before, generate a PostgreSQL query based on the DB schemas, the user's most recent question: {user_question} and the conversation: {messages}",
+                }
+            )
 
         self.logger.debug(f"Messages being fed in to the LLM:\n{messages}")
         query_result = self.openai_service.process_request(

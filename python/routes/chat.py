@@ -35,7 +35,7 @@ class ChatAPI:
         """
 
         logger.info(
-            f"Processing the most recent message from these exchanges: {request.data.exchanges}"
+            f"Processing the most recent message from these messages: {request.data.messages}"
         )
         messages: list[dict[str, str]] = request.data.messages_to_dict()
         user_question: dict[str, str] = messages[len(messages) - 1]
