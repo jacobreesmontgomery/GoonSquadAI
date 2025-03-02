@@ -31,7 +31,11 @@ export default function ChatContainer({
         <Container>
             <MessagesWrapper>
                 {messages.map((msg, index) => (
-                    <Message key={index} text={msg.text} sender={msg.sender} />
+                    <Message
+                        key={index}
+                        content={msg.content}
+                        role={msg.role}
+                    />
                 ))}
             </MessagesWrapper>
             <MessageInput onSend={sendMessage} />

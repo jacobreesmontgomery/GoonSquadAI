@@ -1,5 +1,5 @@
 from services.retrievers.tag import TAGRetriever
-from models.chat import ChatResponse, ChatResponseMeta
+from models.chat import ChatResponse, ChatResponseMeta, OpenAIMessage
 from models.base import APIResponsePayload
 
 
@@ -9,13 +9,14 @@ class ChatService:
         self.retriever = TAGRetriever()
 
     def process(
-        self, user_question: str
+        self, user_question: dict[str, str], messages: list[dict[str, str]]
     ) -> APIResponsePayload[ChatResponse, ChatResponseMeta]:
         """
         Processes a chat message.
 
         :param user_question: The user's question.
+        :param messages: The conversation messages.
 
         :return The response payload.
         """
-        return self.retriever.process(user_question=user_question)
+        return self.retriever.process(user_question=user_question, messages=messages)

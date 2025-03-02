@@ -34,9 +34,13 @@ class ChatAPI:
         :return The response payload.
         """
 
-        logger.info(f"Processing chat message: {request.data.text}")
+        logger.info(
+            f"Processing the most recent message from these exchanges: {request.data.exchanges}"
+        )
+        messages: list[dict[str, str]] = request.data.messages_to_dict()
+        user_question: dict[str, str] = messages[len(messages) - 1]
         response_payload = chat_service.process(
-            user_question=request.data.text,
+            user_question=user_question, messages=messages
         )
         logger.info(f"Chat message processed.")
 

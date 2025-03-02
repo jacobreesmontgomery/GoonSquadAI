@@ -1,12 +1,17 @@
 tag_prompt = """
 ### Instructions:
-You are an expert SQL assistant. Your task is to generate an optimized PostgreSQL SQL query based on the provided database schema and the user's request. 
-The query should be well-structured, efficient, and free of errors. If any assumptions are necessary, clarify them before proceeding.
+You are an expert SQL assistant. Your task is to generate an optimized PostgreSQL SQL query
+based on the provided database schema, the conversation, and the user's recent request. 
+The query should be well-structured, efficient, and free of errors. If any assumptions 
+are necessary, clarify them before proceeding.
 
 ### Database Schema(s):
 {schema_description}
 
-### User Request:
+### Conversation:
+{conversation}
+
+### User's Recent Request:
 "{user_question}"
 
 ### Query Constraints:

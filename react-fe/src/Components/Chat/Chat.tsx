@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 import { ChatContainer } from "Components/ChatContainer";
-import { Conversation, MessageType, USER_TYPES } from "Constants/types/chat";
+import { Conversation, MessageType, ROLE_TYPES } from "Constants/types/chat";
 
 export default function Chat() {
     const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -13,14 +13,17 @@ export default function Chat() {
      * @param text The message to send to the bot.
      */
     const sendMessage = (text: string) => {
-        const newMessage: MessageType = { text, sender: USER_TYPES.USER };
+        const newMessage: MessageType = {
+            role: ROLE_TYPES.USER,
+            content: text,
+        };
         const updatedMessages = [...(conversation?.Messages || []), newMessage];
 
         setConversation((prev) => {
             if (!prev) {
                 return {
                     Messages: updatedMessages,
-                    Options: { completion_id: 0 },
+                    Options: {},
                 };
             }
             return {
@@ -29,38 +32,28 @@ export default function Chat() {
             };
         });
 
-        // TODO: I think I should update this conversation messages structure to match that of
-        // OpenAI's chat completion structure. Example 'messages' attribute:
-        /*
-            [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Hello!"},
-                {"role": "assistant", "content": "Hi there! How can I help?"},
-                {"role": "user", "content": "Tell me about AI."}
-            ]
-        */
+        // TODO: Test this out using debugger mode
         const body = {
             data: {
-                text: text,
+                messages: conversation?.Messages || [],
             },
-            meta: {
-                completion_id:
-                    conversation?.Options?.completion_id || undefined,
-            },
+            meta: {},
         };
         axios.post("http://localhost:5001/api/chat", body).then((res) => {
             console.log("AI response:", res.data.data);
-            const botMessage: MessageType = {
-                text: res.data.data.response,
-                sender: USER_TYPES.BOT,
-            };
-            const newMessages = [...updatedMessages, botMessage];
+            const assistantMsg: MessageType = res.data.data.response;
+            const newMessages: MessageType[] = [
+                ...updatedMessages,
+                assistantMsg,
+            ];
 
             setConversation((prev) => {
                 if (!prev) {
                     return {
                         Messages: newMessages,
-                        Options: { completion_id: res.data.meta.completion_id },
+                        Options: {
+                            completion_id: res.data.meta.completion_id || null,
+                        },
                     };
                 }
                 return {
@@ -68,7 +61,7 @@ export default function Chat() {
                     Messages: newMessages,
                     Options: {
                         ...prev.Options,
-                        completion_id: res.data.meta.completion_id,
+                        completion_id: res.data.meta.completion_id || null,
                     },
                 };
             });

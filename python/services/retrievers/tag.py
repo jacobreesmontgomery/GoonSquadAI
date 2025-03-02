@@ -4,7 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from prompts.tag import tag_prompt
 from models.activity import Activity
 from models.athlete import Athlete
-from models.chat import ChatResponse, ChatResponseMeta
+from models.chat import ChatResponse, ChatResponseMeta, OpenAIMessage, RoleTypes
 from models.base import APIResponsePayload
 from services.database import DatabaseService
 from services.openai import OpenAIService
@@ -68,7 +68,8 @@ class TAGRetriever:
     )
     def execute_query(
         self,
-        user_question: str,
+        user_question: dict[str, str],
+        messages: list[dict[str, str]],
         schema_desc: str = None,
         gpt_model: str = None,
     ) -> tuple[Sequence[Row[Any]], int, int]:
@@ -76,6 +77,7 @@ class TAGRetriever:
         Executes the generated SQL query and returns the results.
 
         :param user_question: The user's question.
+        :param messages: The list of messages.
         :param schema_desc: The schema description for the database.
         :param gpt_model: The GPT model to use for generating the query (e.g., "gpt-4o-mini").
 
@@ -86,14 +88,13 @@ class TAGRetriever:
             schema_desc = self.schema_description
 
         # Generate a query based on the user's question
-        messages: list[dict[str, str]] = []
         if self.error_msg:
-            messages.append({"role": "developer", "content": self.error_msg})
+            messages.append({"role": RoleTypes.DEVELOPER, "content": self.error_msg})
 
         messages.append(
             {
-                "role": "user",
-                "content": f"{tag_prompt.format(schema_description=schema_desc, user_question=user_question)}",
+                "role": RoleTypes.USER,
+                "content": f"{tag_prompt.format(schema_description=schema_desc, conversation=messages, user_question=user_question)}",
             }
         )
 
@@ -124,19 +125,23 @@ class TAGRetriever:
         return result, len(result), completion_id
 
     def process(
-        self, user_question: str, gpt_model: str = None
+        self,
+        user_question: dict[str, str],
+        messages: list[dict[str, str]],
+        gpt_model: str = None,
     ) -> APIResponsePayload[ChatResponse, ChatResponseMeta]:
         """
         Processes the TAG query and returns the AI response.
 
-        :param user_question: The user's question.
+        :param user_question: The user's most recent question.
+        :param messages: The list of messages.
         :param gpt_model: The GPT model to use for generating the query (e.g., "gpt-4o-mini").
 
         :return The response payload.
         """
 
         result, num_rows, completion_id = self.execute_query(
-            user_question=user_question
+            user_question=user_question, messages=messages
         )
 
         # Display the results
@@ -147,10 +152,9 @@ class TAGRetriever:
         self.logger.debug(f"\nQuery Result:\n{formatted_result}")
 
         # Return an answer to the user
-        messages = self.openai_service.get_past_messages(completion_id=completion_id)
         messages.append(
             {
-                "role": "developer",
+                "role": RoleTypes.DEVELOPER,
                 "content": f"""
                     The user previously asked a question, and a SQL query was executed to retrieve relevant data.
                     The query result is:
@@ -175,6 +179,8 @@ class TAGRetriever:
         self.logger.debug(f"\n{ai_response}")
 
         return APIResponsePayload(
-            data=ChatResponse(response=ai_response),
-            meta=ChatResponseMeta(completion_id=completion_id),
+            data=ChatResponse(
+                response=OpenAIMessage(role=RoleTypes.ASSISTANT, content=ai_response)
+            ),
+            meta=ChatResponseMeta(completion_id=completion_id or 0),
         )

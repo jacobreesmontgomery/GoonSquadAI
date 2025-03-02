@@ -3,16 +3,19 @@ export type Conversation = {
     Options: Options;
 };
 
-export enum USER_TYPES {
+export enum ROLE_TYPES {
     USER = "user",
-    BOT = "bot",
+    ASSISTANT = "assistant",
+    SYSTEM = "system",
+    DEVELOPER = "developer",
 }
 
+// NOTE: Should match OpenAIMessage model from the chat.py model class
 export type MessageType = {
-    text: string;
-    sender: USER_TYPES;
+    role: ROLE_TYPES;
+    content: string;
 };
 
 export type Options = {
-    completion_id: number;
+    completion_id?: number;
 };
