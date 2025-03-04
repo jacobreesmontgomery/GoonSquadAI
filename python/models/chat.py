@@ -66,3 +66,4 @@ class ChatResponseMeta(BaseModel):
     """
 
     completion_id: Annotated[str, "The completion ID of the user-bot exchange."] = None
+    executed_query: Annotated[str, "The query that was executed."] = None

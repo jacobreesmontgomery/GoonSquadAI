@@ -33,8 +33,8 @@ export default function ChatContainer({
                 {messages.map((msg, index) => (
                     <Message
                         key={index}
-                        content={msg.content}
-                        role={msg.role}
+                        openai_message={msg.openai_message}
+                        props={msg.props}
                     />
                 ))}
             </MessagesWrapper>

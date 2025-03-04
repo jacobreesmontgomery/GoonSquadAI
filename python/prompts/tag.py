@@ -16,7 +16,9 @@ are necessary, clarify them before proceeding.
 
 ### Query Constraints:
 - Use appropriate SQL joins if multiple tables are involved.
-- Apply filtering conditions (`WHERE`, `HAVING`) based on the user's request.
+- Apply filtering conditions (`WHERE`, `HAVING`, 'ILIKE') based on the user's request.
+    - When names are referenced, use the 'ILIKE' condition for case-insensitive matching, 
+    ALWAYS adding the "%" wildcard to the beginning and end of the search term.
 - Use `LIMIT` when the user requests a subset of results.
 - Ensure the query is optimized and avoids unnecessary computations.
 - If aggregation is required, use `GROUP BY` appropriately.

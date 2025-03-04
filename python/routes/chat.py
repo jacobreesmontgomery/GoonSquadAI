@@ -21,7 +21,7 @@ class ChatAPI:
         summary="Process chat message.",
         description="Process a chat message and return a response.",
         status_code=200,
-        response_model=APIResponsePayload[ChatResponse, Empty],
+        response_model=APIResponsePayload[ChatResponse, ChatResponseMeta],
     )
     async def process_chat_message(
         request: APIRequestPayload[ChatRequest, ChatRequestMeta],

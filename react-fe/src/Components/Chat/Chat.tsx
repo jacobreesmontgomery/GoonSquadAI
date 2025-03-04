@@ -14,8 +14,10 @@ export default function Chat() {
      */
     const sendMessage = (text: string) => {
         const newMessage: MessageType = {
-            role: ROLE_TYPES.USER,
-            content: text,
+            openai_message: {
+                role: ROLE_TYPES.USER,
+                content: text,
+            },
         };
         const updatedMessages = [...(conversation?.Messages || []), newMessage];
 
@@ -34,13 +36,22 @@ export default function Chat() {
 
         const body = {
             data: {
-                messages: updatedMessages || [],
+                messages:
+                    updatedMessages.map(
+                        (msg: MessageType) => msg.openai_message
+                    ) || [],
             },
             meta: {},
         };
         axios.post("http://localhost:5001/api/chat", body).then((res) => {
             console.log("AI response:", res.data.data);
-            const assistantMsg: MessageType = res.data.data.response;
+            const assistantMsg: MessageType = {
+                openai_message: res.data.data.response,
+                props: {
+                    completion_id: res.data.meta.completion_id || null,
+                    executed_query: res.data.meta.executed_query || null,
+                },
+            };
             const newMessages: MessageType[] = [
                 ...updatedMessages,
                 assistantMsg,
@@ -52,6 +63,8 @@ export default function Chat() {
                         Messages: newMessages,
                         Options: {
                             completion_id: res.data.meta.completion_id || null,
+                            executed_query:
+                                res.data.meta.executed_query || null,
                         },
                     };
                 }
@@ -59,14 +72,15 @@ export default function Chat() {
                     ...prev,
                     Messages: newMessages,
                     Options: {
-                        ...prev.Options,
                         completion_id: res.data.meta.completion_id || null,
+                        executed_query: res.data.meta.executed_query || null,
                     },
                 };
             });
         });
     };
 
+    console.log("conversation:", conversation);
     return (
         <ChatContainer
             messages={conversation?.Messages || []}

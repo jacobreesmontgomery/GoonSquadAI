@@ -72,7 +72,7 @@ class TAGRetriever:
         messages: list[dict[str, str]],
         schema_desc: str = None,
         gpt_model: str = None,
-    ) -> tuple[Sequence[Row[Any]], int, int]:
+    ) -> tuple[Sequence[Row[Any]], int, int, str]:
         """
         Executes the generated SQL query and returns the results.
 
@@ -81,7 +81,7 @@ class TAGRetriever:
         :param schema_desc: The schema description for the database.
         :param gpt_model: The GPT model to use for generating the query (e.g., "gpt-4o-mini").
 
-        :return: The query results, the number of results, and the completion ID.
+        :return: The query results, the number of results, the completion ID, and the query to execute.
         """
 
         if not schema_desc:
@@ -122,6 +122,7 @@ class TAGRetriever:
         query = query_result.choices[0].message.content
         query_to_execute = self.clean_query(query)
 
+        # TODO: Add a widget to allow the user to view the executed query
         # Execute the query
         session = self.db_service.get_session()
         try:
@@ -134,7 +135,7 @@ class TAGRetriever:
             raise e  # Hit the retry mechanism
         self.db_service.close_session()
 
-        return result, len(result), completion_id
+        return result, len(result), completion_id, query_to_execute
 
     def process(
         self,
@@ -152,7 +153,7 @@ class TAGRetriever:
         :return The response payload.
         """
 
-        result, num_rows, completion_id = self.execute_query(
+        result, num_rows, completion_id, executed_query = self.execute_query(
             user_question=user_question, messages=messages
         )
 
@@ -176,7 +177,7 @@ class TAGRetriever:
                     Your task is to **write a natural language answer** to the user.
                     Do **NOT** generate another SQL query. Simply provide a clear, well-written summary response.
 
-                    Additionally, if it makes sense, use a Markdown-formatted table to hold the data.
+                    Additionally, if there are multiple data records, display such with a Markdown-formatted table.
                 """,
             }
         )
@@ -194,5 +195,8 @@ class TAGRetriever:
             data=ChatResponse(
                 response=OpenAIMessage(role=RoleTypes.ASSISTANT, content=ai_response)
             ),
-            meta=ChatResponseMeta(completion_id=completion_id or 0),
+            meta=ChatResponseMeta(
+                completion_id=completion_id or None,
+                executed_query=executed_query or None,
+            ),
         )
