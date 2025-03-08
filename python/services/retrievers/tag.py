@@ -1,11 +1,28 @@
 from sqlalchemy import text, Sequence, Row, Any
-from tenacity import retry, stop_after_attempt, wait_random_exponential
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+    retry_if_exception_type,
+)
+from json import loads
 
 from prompts.tag import tag_prompt
 from models.activity import Activity
 from models.athlete import Athlete
-from models.chat import ChatResponse, ChatResponseMeta, OpenAIMessage, RoleTypes
+from models.chat import (
+    ChatResponse,
+    ChatResponseMeta,
+    OpenAIMessage,
+    RoleTypes,
+    GeneratedQueryOutput,
+)
 from models.base import APIResponsePayload
+from models.exceptions import (
+    LowConfidenceQueryException,
+    QueryExecutionException,
+    QueryGenerationException,
+)
 from services.database import DatabaseService
 from services.openai import OpenAIService
 from utils.simple_logger import SimpleLogger
@@ -65,6 +82,9 @@ class TAGRetriever:
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_random_exponential(min=1, max=10),
+        retry=retry_if_exception_type(
+            [QueryGenerationException, QueryExecutionException]
+        ),
     )
     def execute_query(
         self,
@@ -72,7 +92,7 @@ class TAGRetriever:
         messages: list[dict[str, str]],
         schema_desc: str = None,
         gpt_model: str = None,
-    ) -> tuple[Sequence[Row[Any]], int, int, str]:
+    ) -> tuple[Sequence[Row[Any]], int, int, str] | str:
         """
         Executes the generated SQL query and returns the results.
 
@@ -81,7 +101,8 @@ class TAGRetriever:
         :param schema_desc: The schema description for the database.
         :param gpt_model: The GPT model to use for generating the query (e.g., "gpt-4o-mini").
 
-        :return: The query results, the number of results, the completion ID, and the query to execute.
+        :return: The query results, the number of results, the completion ID, and the query to execute,
+                    OR follow-up questions to ask the user.
         """
 
         if not schema_desc:
@@ -91,24 +112,35 @@ class TAGRetriever:
         if self.error_msg:
             messages.append({"role": RoleTypes.DEVELOPER, "content": self.error_msg})
 
-        if not any(
-            msg["content"].startswith(tag_prompt.split("{")[0]) for msg in messages
-        ):
-            # Only append the full TAG prompt if it's not already in the messages
-            messages.append(
-                {
-                    "role": RoleTypes.DEVELOPER,
-                    "content": f"{tag_prompt.format(schema_description=schema_desc, conversation=messages, user_question=user_question)}",
-                }
-            )
-        else:
-            # TODO: Seems to be working well, but need to test more
-            messages.append(
-                {
-                    "role": RoleTypes.DEVELOPER,
-                    "content": f"Same as before, generate a PostgreSQL query based on the DB schemas, the user's most recent question: {user_question} and the conversation: {messages}",
-                }
-            )
+        # if not any(
+        #     msg["content"].startswith(tag_prompt.split("{")[0]) for msg in messages
+        # ):
+        # Only append the full TAG prompt if it's not already in the messages
+        messages.append(
+            {
+                "role": RoleTypes.DEVELOPER,
+                "content": tag_prompt.format(
+                    schema_description=schema_desc,
+                    conversation=messages,
+                    user_question=user_question,
+                ),
+            }
+        )
+        # else:
+        #     # Need to fix this to handle updated prompt structure with confidence levels
+        #     messages.append(
+        #         {
+        #             "role": RoleTypes.DEVELOPER,
+        #             "content": f"""
+        #                 Same as before, generate a JSON object (with the aforementioned attributes)
+        #                 based on the DB schemas, the conversation: {messages}, and predominantly the
+        #                 user's most recent question: {user_question}, following the aforementioned instructions.
+        #                 Predominantly focus on the user's most recent question to generate the query.
+        #                 If it is unclear, even with the conversation context, establish "LOW" confidence
+        #                 and establish follow-up questions using the "follow_ups" attribute.
+        #             """,
+        #         }
+        #     )
 
         self.logger.debug(f"Messages being fed in to the LLM:\n{messages}")
         query_result = self.openai_service.process_request(
@@ -118,11 +150,34 @@ class TAGRetriever:
         completion_id = query_result.id
         self.logger.debug(f"Chat completed: {completion_id}")
 
-        # Clean up the query so it's executable
-        query = query_result.choices[0].message.content
-        query_to_execute = self.clean_query(query)
+        # Clean things up and get an executable query
+        try:
+            # Replace single quotes with double quotes for the JSON object
+            query_result.choices[0].message.content = (
+                query_result.choices[0]
+                .message.content.replace("```", "")
+                .replace("json", "")
+            )
+            json_result_data = loads(query_result.choices[0].message.content)
+            json_result: GeneratedQueryOutput = GeneratedQueryOutput.parse_obj(
+                json_result_data
+            )
+            follow_ups = json_result.follow_ups if json_result.follow_ups else None
+            confidence = json_result.confidence
+            if confidence == "LOW":
+                if not follow_ups:
+                    follow_ups = "Could you please elaborate on your question?"
+                self.error_msg = f"Confidence level is {confidence}. Follow-up questions: {follow_ups}."
+                self.logger.error(self.error_msg)
+                return follow_ups
+            query_to_execute = self.clean_query(json_result.query)
+        except Exception as e:
+            self.error_msg = f"An error occurred during query generation: {query_result.choices[0].message.content}. Here is the error: {e}\nPlease try again.\n"
+            self.logger.error(self.error_msg)
+            raise QueryGenerationException(
+                message=self.error_msg
+            )  # Hit the retry mechanism
 
-        # TODO: Add a widget to allow the user to view the executed query
         # Execute the query
         session = self.db_service.get_session()
         try:
@@ -132,7 +187,9 @@ class TAGRetriever:
             self.error_msg = f"An error occurred while executing this query: {query_to_execute}.\nHere is the error: {e}\nPlease generate a query to resolve this issue.\n"
             self.logger.error(self.error_msg)
             self.db_service.close_session()  # Close session before retry
-            raise e  # Hit the retry mechanism
+            raise QueryExecutionException(
+                message=self.error_msg
+            )  # Hit the retry mechanism
         self.db_service.close_session()
 
         return result, len(result), completion_id, query_to_execute
@@ -153,9 +210,22 @@ class TAGRetriever:
         :return The response payload.
         """
 
-        result, num_rows, completion_id, executed_query = self.execute_query(
-            user_question=user_question, messages=messages
-        )
+        result = self.execute_query(user_question=user_question, messages=messages)
+
+        if isinstance(result, str):
+            # The LLM had low confidence and provided follow-up questions
+            return APIResponsePayload(
+                data=ChatResponse(
+                    response=OpenAIMessage(role=RoleTypes.ASSISTANT, content=result)
+                ),
+                meta=ChatResponseMeta(
+                    completion_id=None,
+                    executed_query=None,
+                ),
+            )
+
+        # Unpack the tuple result
+        result, num_rows, completion_id, executed_query = result
 
         # Display the results
         formatted_result = "\n".join([str(row) for row in result])

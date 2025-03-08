@@ -67,3 +67,12 @@ class ChatResponseMeta(BaseModel):
 
     completion_id: Annotated[str, "The completion ID of the user-bot exchange."] = None
     executed_query: Annotated[str, "The query that was executed."] = None
+
+
+class GeneratedQueryOutput(BaseModel):
+    query: Annotated[str, "The generated SQL query."]
+    confidence: Annotated[str, "The confidence level of the query (LOW, MEDIUM, HIGH)."]
+    follow_ups: Annotated[
+        str,
+        "Follow-up questions to ask the user--in the case of a LOW confidence level--to gain clarity on the request.",
+    ] = None

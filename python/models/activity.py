@@ -101,7 +101,7 @@ class Activity(Base):
         - year (INTEGER, NOT NULL): Year of the activity (e.g., 2024).
         - spm_avg (FLOAT, NULL): Average steps per minute.
         - hr_avg (FLOAT, NULL): Average heart rate during the activity.
-        - wkt_type (INTEGER, NULL): Workout type classification.
+        - wkt_type (INTEGER, NULL): The run type classification (0 = default, 1 = race, 2 = long run, 3 = workout).
         - description (TEXT, NULL): Additional notes or description of the activity.
         - total_elev_gain_ft (FLOAT, NULL): Total elevation gain in feet.
         - manual (BOOLEAN, NOT NULL): Whether the activity was manually logged.
@@ -119,6 +119,8 @@ class Activity(Base):
         Notes: 
         - Primary Key: activity_id
         - Foreign Key: athlete_id references strava_api.athletes.athlete_id
+        - The 'wkt_type' column, regardless of the value, represents a run of some form.
+            - If a user asks for a specific type of run, consider filtering by this column in the SQL generation. Otherwise, ignore it.
         """
 
         return schema_description.strip()
