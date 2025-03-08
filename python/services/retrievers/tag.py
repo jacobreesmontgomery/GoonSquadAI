@@ -112,10 +112,7 @@ class TAGRetriever:
         if self.error_msg:
             messages.append({"role": RoleTypes.DEVELOPER, "content": self.error_msg})
 
-        # if not any(
-        #     msg["content"].startswith(tag_prompt.split("{")[0]) for msg in messages
-        # ):
-        # Only append the full TAG prompt if it's not already in the messages
+        # NOTE - Consideration: Only append the full TAG prompt if it's not already in the messages
         messages.append(
             {
                 "role": RoleTypes.DEVELOPER,
@@ -126,21 +123,6 @@ class TAGRetriever:
                 ),
             }
         )
-        # else:
-        #     # Need to fix this to handle updated prompt structure with confidence levels
-        #     messages.append(
-        #         {
-        #             "role": RoleTypes.DEVELOPER,
-        #             "content": f"""
-        #                 Same as before, generate a JSON object (with the aforementioned attributes)
-        #                 based on the DB schemas, the conversation: {messages}, and predominantly the
-        #                 user's most recent question: {user_question}, following the aforementioned instructions.
-        #                 Predominantly focus on the user's most recent question to generate the query.
-        #                 If it is unclear, even with the conversation context, establish "LOW" confidence
-        #                 and establish follow-up questions using the "follow_ups" attribute.
-        #             """,
-        #         }
-        #     )
 
         self.logger.debug(f"Messages being fed in to the LLM:\n{messages}")
         query_result = self.openai_service.process_request(
