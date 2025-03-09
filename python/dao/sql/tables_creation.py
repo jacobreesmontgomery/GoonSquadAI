@@ -1,5 +1,4 @@
-from models.athlete import Base, Athlete
-from models.activity import Activity
+from models.athlete import Base, Athlete, Activity
 from services.database import DatabaseService
 
 # Create the database service

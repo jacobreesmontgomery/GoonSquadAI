@@ -8,8 +8,7 @@ from tenacity import (
 from json import loads
 
 from prompts.tag import tag_prompt
-from models.activity import Activity
-from models.athlete import Athlete
+from models.athlete import Activity, Athlete
 from models.chat import (
     ChatResponse,
     ChatResponseMeta,
@@ -19,7 +18,6 @@ from models.chat import (
 )
 from models.base import APIResponsePayload
 from models.exceptions import (
-    LowConfidenceQueryException,
     QueryExecutionException,
     QueryGenerationException,
 )

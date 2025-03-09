@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+from dao.strava_activities import StravaActivitiesDao
 from utils.simple_logger import SimpleLogger
 
 logger = SimpleLogger(log_level="INFO", class_name=__name__).logger

@@ -10,6 +10,7 @@ from tenacity import (
     retry_if_exception_type,
     RetryError,
 )
+from os import getenv
 
 from utils.simple_logger import SimpleLogger
 
@@ -19,10 +20,10 @@ class StravaAuthorization:
     Responsible for authorization of a given athlete and acquiring their newest access token.
     """
 
-    def __init__(self, client_id, client_secret, redirect_uri):
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
+    def __init__(self, client_id=None, client_secret=None, redirect_uri=None):
+        self.client_id = client_id if client_id else getenv("CLIENT_ID")
+        self.client_secret = client_secret if client_secret else getenv("CLIENT_SECRET")
+        self.redirect_uri = redirect_uri if redirect_uri else getenv("REDIRECT_URI")
         self.client = Client()
 
     def get_authorization_url(self) -> str:

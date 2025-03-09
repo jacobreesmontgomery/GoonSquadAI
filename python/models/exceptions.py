@@ -19,9 +19,3 @@ class QueryExecutionException(BaseHTTPException):
 
     message: str = "An error occurred while executing the query."
     status_code: int = 500
-
-
-class LowConfidenceQueryException(BaseHTTPException):
-
-    message: str = "The confidence level of the generated query is too low."
-    status_code: int = 500
