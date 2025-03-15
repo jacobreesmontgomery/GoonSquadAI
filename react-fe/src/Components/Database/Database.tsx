@@ -72,19 +72,28 @@ const ATHLETE_DATA_FILTERED_FIELDNAMES = [
 ];
 
 export default function Database() {
-    const [rowData, setRowData] = useState<Record<string, any>[]>([]);
+    const [headerStats, setHeaderStats] = useState<string[]>([]);
+    const [rowData, setRowData] = useState<string[][]>([]);
     const [sortConfig, setSortConfig] = useState<{
         key: string;
         direction: "ascending" | "descending";
     } | null>(null);
     const [filters, setFilters] = useState<string[]>([]);
 
-    // TODO: Fix this bullshit
+    const filterHeaderStats = useCallback((headerStats: string[]) => {
+        return headerStats.filter((header) =>
+            Object.keys(MAPPED_FIELDNAMES).includes(header)
+        );
+    }, []);
+
+    /**
+     * Filter out the columns from each record that we don't want to display in the table.
+     * @param rowData The data to filter.
+     * @returns The filtered data.
+     */
     const filterRowData = useCallback((rowData: Record<string, any>[]) => {
         return rowData.map((row) =>
-            ATHLETE_DATA_FILTERED_FIELDNAMES.map(
-                (field) => row[MAPPED_FIELDNAMES[field]]
-            )
+            ATHLETE_DATA_FILTERED_FIELDNAMES.map((field) => row[field])
         );
     }, []);
 
@@ -92,16 +101,20 @@ export default function Database() {
         axios
             .get("http://localhost:5001/api/activities/detailed-stats")
             .then((response) => {
+                const headersStats = filterHeaderStats(
+                    response.data.data.headers
+                );
                 const rowData = filterRowData(response.data.data.activities);
+                setHeaderStats(headersStats);
                 setRowData(rowData);
                 setFilters(
-                    new Array(ATHLETE_DATA_FILTERED_FIELDNAMES.length).fill("")
+                    new Array(response.data.data.headers.length).fill("")
                 );
             })
             .catch((error) => {
                 console.error("There was an error fetching the data!", error);
             });
-    }, [filterRowData]);
+    }, [filterHeaderStats, filterRowData]);
 
     const handleSort = useCallback(
         (key: string) => {
@@ -127,15 +140,11 @@ export default function Database() {
         [filters]
     );
 
-    const headers = ATHLETE_DATA_FILTERED_FIELDNAMES.map(
-        (field) => MAPPED_FIELDNAMES[field]
-    );
-
     return (
         <div className="stats-container">
             <h2>Database</h2>
             <Table
-                headers={headers}
+                headers={headerStats}
                 rowData={rowData}
                 sortConfig={sortConfig}
                 handleSort={handleSort}
