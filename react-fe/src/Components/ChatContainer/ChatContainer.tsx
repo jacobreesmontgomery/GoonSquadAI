@@ -21,11 +21,13 @@ const MessagesWrapper = styled.div`
 type ChatContainerProps = {
     messages: MessageType[];
     sendMessage: (text: string) => void;
+    clearConversation: () => void;
 };
 
 export default function ChatContainer({
     messages,
     sendMessage,
+    clearConversation,
 }: ChatContainerProps) {
     return (
         <Container>
@@ -38,7 +40,10 @@ export default function ChatContainer({
                     />
                 ))}
             </MessagesWrapper>
-            <MessageInput onSend={sendMessage} />
+            <MessageInput
+                onSend={sendMessage}
+                clearConversation={clearConversation}
+            />
         </Container>
     );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import axios from "axios";
 
 import { ChatContainer } from "Components/ChatContainer";
@@ -80,11 +80,16 @@ export default function Chat() {
         });
     };
 
+    const clearConversation = useCallback(() => {
+        setConversation(null);
+    }, [setConversation]);
+
     console.log("conversation:", conversation);
     return (
         <ChatContainer
             messages={conversation?.Messages || []}
             sendMessage={sendMessage}
+            clearConversation={clearConversation}
         />
     );
 }
