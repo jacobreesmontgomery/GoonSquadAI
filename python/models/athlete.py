@@ -125,6 +125,44 @@ class Activity(Base):
             f"distance_mi={self.distance_mi}, moving_time={self.moving_time})>"
         )
 
+    def get_headers(self):
+        """
+        Returns the headers for the Activity model.
+        """
+
+        return [
+            "activity_id",
+            "athlete_id",
+            "name",
+            "moving_time",
+            "moving_time_s",
+            "distance_mi",
+            "pace_min_mi",
+            "avg_speed_ft_s",
+            "full_datetime",
+            "time",
+            "week_day",
+            "month",
+            "day",
+            "year",
+            "spm_avg",
+            "hr_avg",
+            "wkt_type",
+            "description",
+            "total_elev_gain_ft",
+            "manual",
+            "max_speed_ft_s",
+            "calories",
+            "achievement_count",
+            "kudos_count",
+            "comment_count",
+            "athlete_count",
+            "rpe",
+            "rating",
+            "avg_power",
+            "sleep_rating",
+        ]
+
     def convert_to_schema_description(self):
         """
         Converts the Activity SQLAlchemy model to an LLM-interpretable schema description.

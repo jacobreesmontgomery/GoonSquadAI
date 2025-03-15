@@ -20,7 +20,7 @@ const backendUrl = 'http://localhost:5000';
 app.get('/api/activities/basic-stats', async (req, res) => {
     console.log("Received request to /api/activities/basic-stats")
     try {
-        const response = await axios.get(`${backendUrl}/api/activities/basic-stats`);
+        const response = await axios.get(`${backendUrl}/api/v1/activities/basic-stats`);
         res.json(response.data);
     } catch (error) {
         res.status(error.response ? error.response.status : 500).json({
@@ -32,7 +32,7 @@ app.get('/api/activities/basic-stats', async (req, res) => {
 app.get('/api/activities/detailed-stats', async (req, res) => {
     console.log("Received request to /api/activities/detailed-stats")
     try {
-        const response = await axios.get(`${backendUrl}/api/activities/detailed-stats`);
+        const response = await axios.get(`${backendUrl}/api/v1/activities/detailed-stats`);
         res.json(response.data);
     } catch (error) {
         res.status(error.response ? error.response.status : 500).json({
