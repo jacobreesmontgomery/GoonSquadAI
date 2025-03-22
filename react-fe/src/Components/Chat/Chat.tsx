@@ -91,12 +91,10 @@ export default function Chat() {
 
     console.log("conversation:", conversation);
     return (
-        <ThemeProvider>
-            <ChatContainer
-                messages={conversation?.Messages || []}
-                sendMessage={sendMessage}
-                clearConversation={clearConversation}
-            />
-        </ThemeProvider>
+        <ChatContainer
+            messages={conversation?.Messages || []}
+            sendMessage={sendMessage}
+            clearConversation={clearConversation}
+        />
     );
 }

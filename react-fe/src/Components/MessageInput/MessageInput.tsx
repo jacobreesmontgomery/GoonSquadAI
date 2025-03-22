@@ -1,7 +1,6 @@
 import { useState } from "react";
 import styled from "styled-components";
 import { PlusCircle } from "react-feather";
-import { ThemeToggle } from "Components/ThemeToggle";
 
 const InputContainer = styled.div`
     padding: 1rem;
@@ -83,7 +82,6 @@ export default function MessageInput({
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
             />
             <SendButton onClick={handleSend}>Send</SendButton>
-            <ThemeToggle />
         </InputContainer>
     );
 }
