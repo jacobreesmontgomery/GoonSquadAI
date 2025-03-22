@@ -1,4 +1,3 @@
-const axios = require('axios');
 const backendUrl = 'http://localhost:5000';
 
 const redirectToStravaAuth = async (req, res) => {
