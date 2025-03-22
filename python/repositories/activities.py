@@ -26,6 +26,7 @@ class ActivitiesRepository:
         """
 
         logger.info("Getting activities")
+
         pass
 
     def get_detailed_activities(self) -> APIResponsePayload[DetailedActivities, Empty]:

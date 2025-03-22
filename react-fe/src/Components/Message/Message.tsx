@@ -17,9 +17,11 @@ const MessageContainer = styled.div<{ isUser: boolean }>`
     margin-bottom: 1rem;
     display: flex;
     justify-content: ${(props) => (props.isUser ? "flex-end" : "flex-start")};
+    flex-direction: ${(props) => (props.isUser ? "row" : "column")};
 `;
 
 const MessageBubble = styled.div<{ isUser: boolean }>`
+    position: relative;
     max-width: 80%;
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
@@ -31,27 +33,24 @@ const MessageBubble = styled.div<{ isUser: boolean }>`
         props.isUser
             ? props.theme.messageTextUser
             : props.theme.messageTextAssistant};
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-`;
-
-const WidgetsContainer = styled.div`
-    width: fit-content;
-    display: flex;
-    align-items: start;
-    padding: 0.1rem;
-    margin-top: 0.25rem;
-    border-radius: 0.75rem;
-    background-color: #f3f4f6;
-    color: black;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.1);
 `;
 
 const DatabaseButton = styled.button`
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
     padding: 0;
     border: none;
-    background-color: #f3f4f6;
-    color: black;
+    background-color: transparent;
+    color: inherit;
     cursor: pointer;
+    display: flex;
+    opacity: 0.7;
+
+    &:hover {
+        opacity: 1;
+    }
 `;
 
 const DatabaseIcon = styled(Database)`
@@ -95,40 +94,41 @@ export default function Message({ openai_message, props }: MessageType) {
                 {role === ROLE_TYPES.USER ? (
                     content
                 ) : (
-                    <Markdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                    >
-                        {content}
-                    </Markdown>
+                    <>
+                        {executed_query && (
+                            <DatabaseButton onClick={openModal}>
+                                <DatabaseIcon size={16} />
+                            </DatabaseButton>
+                        )}
+                        <Markdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight]}
+                        >
+                            {content}
+                        </Markdown>
+                    </>
                 )}
+
+                <ReactModal
+                    isOpen={modalIsOpen}
+                    onRequestClose={closeModal}
+                    style={customStyles}
+                    contentLabel="Executed Query"
+                >
+                    <XCircle
+                        size={20}
+                        onClick={closeModal}
+                        style={{
+                            cursor: "pointer",
+                            position: "absolute",
+                            top: "0.35rem",
+                            right: "0.35rem",
+                        }}
+                    />
+                    <h2>Here was the executed query:</h2>
+                    <div>{executed_query}</div>
+                </ReactModal>
             </MessageBubble>
-            {executed_query && (
-                <WidgetsContainer>
-                    <DatabaseButton onClick={openModal}>
-                        <DatabaseIcon />
-                    </DatabaseButton>
-                    <ReactModal
-                        isOpen={modalIsOpen}
-                        onRequestClose={closeModal}
-                        style={customStyles}
-                        contentLabel="Executed Query"
-                    >
-                        <XCircle
-                            size={20}
-                            onClick={closeModal}
-                            style={{
-                                cursor: "pointer",
-                                position: "absolute",
-                                top: "0.35rem",
-                                right: "0.35rem",
-                            }}
-                        />
-                        <h2>Here was the executed query:</h2>
-                        <div>{executed_query}</div>
-                    </ReactModal>
-                </WidgetsContainer>
-            )}
         </MessageContainer>
     );
 }

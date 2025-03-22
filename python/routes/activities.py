@@ -26,6 +26,7 @@ class ActivitiesAPI:
         """
 
         response = activities_repository.get_basic_activities()
+
         pass
 
     # TODO: Complete this route
@@ -44,6 +45,7 @@ class ActivitiesAPI:
         """
 
         response = activities_repository.get_detailed_activities()
+
         return response
 
     # TODO: Complete this route
@@ -62,4 +64,5 @@ class ActivitiesAPI:
         """
 
         response = activities_repository.update_database_activities()
+
         return response
