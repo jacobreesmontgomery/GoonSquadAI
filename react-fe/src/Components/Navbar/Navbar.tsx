@@ -5,17 +5,19 @@ import ThemeToggle from "Components/ThemeToggle/ThemeToggle";
 import { useTheme } from "Contexts/ThemeContext";
 
 const NavbarContainer = styled.div`
-    background-color: #333;
+    background-color: ${(props) => props.theme.navbarBackground};
     padding: 0.625rem;
-    color: #fc4c02;
+    color: ${(props) => props.theme.navbarText};
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: ${(props) => props.theme.shadow};
 `;
 
 const NavbarTitle = styled.h1`
     margin: 0;
     height: 100%;
+    color: ${(props) => props.theme.accent};
 `;
 
 const NavbarLinks = styled.div`
@@ -24,13 +26,14 @@ const NavbarLinks = styled.div`
 `;
 
 const NavbarLink = styled.a`
-    color: #fc4c02;
+    color: ${(props) => props.theme.accent};
     text-decoration: none;
     padding: 0.3125rem 0.625rem;
     border-radius: 0.3125rem;
+    transition: background-color 0.2s;
 
     &:hover {
-        background-color: #575757;
+        background-color: ${(props) => props.theme.navbarLinkHover};
     }
 `;
 
@@ -38,15 +41,16 @@ const SettingsButton = styled.button`
     background: none;
     border: none;
     cursor: pointer;
-    color: #fc4c02;
+    color: ${(props) => props.theme.accent};
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0.3125rem;
     border-radius: 0.3125rem;
+    transition: background-color 0.2s;
 
     &:hover {
-        background-color: #575757;
+        background-color: ${(props) => props.theme.navbarLinkHover};
     }
 `;
 
@@ -54,12 +58,12 @@ const SettingsDropdown = styled.div`
     position: absolute;
     right: 0.625rem;
     top: 3.125rem;
-    background-color: ${(props) => props.theme.background || "#444"};
-    border: 0.0625rem solid ${(props) => props.theme.border || "#666"};
+    background-color: ${(props) => props.theme.settingsDropdownBg};
+    border: 0.0625rem solid ${(props) => props.theme.settingsDropdownBorder};
     border-radius: 0.3125rem;
     padding: 0.625rem;
     z-index: 1000;
-    box-shadow: 0 0.125rem 0.625rem rgba(0, 0, 0, 0.2);
+    box-shadow: ${(props) => props.theme.shadow};
     min-width: 10rem;
 `;
 
@@ -68,8 +72,9 @@ const SettingsItem = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 0.5rem 0.3125rem;
-    color: ${(props) => props.theme.text || "#fc4c02"};
-    border-bottom: 0.0625rem solid ${(props) => props.theme.border || "#555"};
+    color: ${(props) => props.theme.text};
+    border-bottom: 0.0625rem solid
+        ${(props) => props.theme.settingsDropdownBorder};
     gap: 1rem;
 
     &:last-child {

@@ -1,6 +1,21 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Table } from "Components/Table";
+import styled from "styled-components";
+
+const SectionHeader = styled.h2`
+    color: ${(props) => props.theme.headerText};
+    margin-bottom: 1.5rem;
+`;
+
+const StatsContainer = styled.div`
+    background-color: ${(props) => props.theme.cardBackground};
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: ${(props) => props.theme.shadow};
+    border: 1px solid ${(props) => props.theme.containerBorder};
+    height: 100vh;
+`;
 
 export default function BasicStats() {
     const [headerStats, setHeaderStats] = useState<string[]>([]);
@@ -45,8 +60,8 @@ export default function BasicStats() {
     };
 
     return (
-        <div className="stats-container">
-            <h2>Basic Stats</h2>
+        <StatsContainer>
+            <SectionHeader>Basic Stats</SectionHeader>
             <Table
                 headers={headerStats}
                 rowData={rowData}
@@ -55,6 +70,6 @@ export default function BasicStats() {
                 filters={filters}
                 handleFilterChange={handleFilterChange}
             />
-        </div>
+        </StatsContainer>
     );
 }

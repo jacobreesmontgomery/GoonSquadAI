@@ -2,6 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Table } from "Components/Table";
 import "../App/App.css";
+import styled from "styled-components";
+
+const SectionHeader = styled.h2`
+    color: ${(props) => props.theme.headerText};
+    margin-bottom: 1.5rem;
+`;
+
+const StatsContainer = styled.div`
+    background-color: ${(props) => props.theme.cardBackground};
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: ${(props) => props.theme.shadow};
+    border: 1px solid ${(props) => props.theme.containerBorder};
+    height: 100vh;
+`;
 
 const ATHLETE_DATA_FIELDNAMES = [
     "ATHLETE",
@@ -141,8 +156,8 @@ export default function Database() {
     );
 
     return (
-        <div className="stats-container">
-            <h2>Database</h2>
+        <StatsContainer>
+            <SectionHeader>Database</SectionHeader>
             <Table
                 headers={headerStats}
                 rowData={rowData}
@@ -151,6 +166,6 @@ export default function Database() {
                 filters={filters}
                 handleFilterChange={handleFilterChange}
             />
-        </div>
+        </StatsContainer>
     );
 }

@@ -78,9 +78,11 @@ export default function Table({
     }, [rowData, sortConfig, headers]);
 
     const filteredData = sortedData.filter((row) =>
-        row.every((cell, index) =>
-            cell.toLowerCase().includes(filters[index].toLowerCase())
-        )
+        row.every((cell, index) => {
+            const cellValue = cell?.toString() || "";
+            const filterValue = filters[index]?.toString() || "";
+            return cellValue.toLowerCase().includes(filterValue.toLowerCase());
+        })
     );
 
     return (
