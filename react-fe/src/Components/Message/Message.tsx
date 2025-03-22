@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -13,24 +13,25 @@ import {
     ROLE_TYPES,
 } from "Constants/types/chat";
 
-const MessageWrapper = styled.div<{ $role: ROLE_TYPES }>`
-    display: flex;
-    justify-content: ${(props) =>
-        props.$role === ROLE_TYPES.USER ? "flex-end" : "flex-start"};
+const MessageContainer = styled.div<{ isUser: boolean }>`
     margin-bottom: 1rem;
-    flex-direction: ${(props) =>
-        props.$role === ROLE_TYPES.ASSISTANT && "column"};
+    display: flex;
+    justify-content: ${(props) => (props.isUser ? "flex-end" : "flex-start")};
 `;
 
-const MessageBubble = styled.div<{ $role: ROLE_TYPES }>`
-    max-width: 65%;
-    width: fit-content;
-    padding: 0.625rem;
-    border-radius: 0.75rem;
+const MessageBubble = styled.div<{ isUser: boolean }>`
+    max-width: 80%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
     background-color: ${(props) =>
-        props.$role === "user" ? "#3b82f6" : "#e5e7eb"};
-    color: ${(props) => (props.$role === "user" ? "white" : "black")};
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+        props.isUser
+            ? props.theme.messageBgUser
+            : props.theme.messageBgAssistant};
+    color: ${(props) =>
+        props.isUser
+            ? props.theme.messageTextUser
+            : props.theme.messageTextAssistant};
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 `;
 
 const WidgetsContainer = styled.div`
@@ -86,9 +87,11 @@ export default function Message({ openai_message, props }: MessageType) {
         setIsOpen(false);
     }
 
+    const isUser = openai_message.role === ROLE_TYPES.USER;
+
     return (
-        <MessageWrapper $role={role}>
-            <MessageBubble $role={role}>
+        <MessageContainer isUser={isUser}>
+            <MessageBubble isUser={isUser}>
                 {role === ROLE_TYPES.USER ? (
                     content
                 ) : (
@@ -126,6 +129,6 @@ export default function Message({ openai_message, props }: MessageType) {
                     </ReactModal>
                 </WidgetsContainer>
             )}
-        </MessageWrapper>
+        </MessageContainer>
     );
 }

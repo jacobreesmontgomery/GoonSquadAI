@@ -8,8 +8,9 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     height: 90dvh; // NOTE: Probably a way to not hardcode this here (establish height in a parent element then use % here)
-    background-color: #f3f4f6;
+    background-color: ${(props) => props.theme.background};
     overflow-wrap: break-word;
+    color: ${(props) => props.theme.text};
 `;
 
 const MessagesWrapper = styled.div`

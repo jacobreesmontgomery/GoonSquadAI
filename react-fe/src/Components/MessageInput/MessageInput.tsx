@@ -1,27 +1,34 @@
 import { useState } from "react";
 import styled from "styled-components";
 import { PlusCircle } from "react-feather";
+import { ThemeToggle } from "Components/ThemeToggle";
 
 const InputContainer = styled.div`
     padding: 1rem;
-    background: white;
+    background: ${(props) => props.theme.inputBackground};
     display: flex;
     align-items: center;
-    border-top: 0.0625rem solid #e5e7eb;
+    border-top: 0.0625rem solid ${(props) => props.theme.containerBorder};
     gap: 0.75rem;
 `;
 
 const Input = styled.input`
     flex: 1;
     padding: 0.625rem;
-    border: 0.0625rem solid #e5e7eb;
+    border: 0.0625rem solid ${(props) => props.theme.inputBorder};
     border-radius: 0.5rem;
     outline: none;
+    background-color: ${(props) => props.theme.inputBackground};
+    color: ${(props) => props.theme.text};
+
+    &::placeholder {
+        color: ${(props) => props.theme.text}80;
+    }
 `;
 
 const SendButton = styled.button`
     padding: 0.625rem 1rem;
-    background-color: #3b82f6;
+    background-color: ${(props) => props.theme.primary};
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -33,13 +40,13 @@ const NewChatButton = styled.button`
     border: none;
     cursor: pointer;
     padding: 0;
+    color: ${(props) => props.theme.text};
 `;
 
 const NewChatIcon = styled(PlusCircle)`
     height: 100%;
     padding: 0;
     margin: 0;
-    background-color: none !important;
 `;
 
 type MessageInputType = {
@@ -76,6 +83,7 @@ export default function MessageInput({
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
             />
             <SendButton onClick={handleSend}>Send</SendButton>
+            <ThemeToggle />
         </InputContainer>
     );
 }

@@ -3,6 +3,7 @@ import axios from "axios";
 
 import { ChatContainer } from "Components/ChatContainer";
 import { Conversation, MessageType, ROLE_TYPES } from "Constants/types/chat";
+import ThemeProvider from "Contexts/ThemeContext";
 
 export default function Chat() {
     const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -90,10 +91,12 @@ export default function Chat() {
 
     console.log("conversation:", conversation);
     return (
-        <ChatContainer
-            messages={conversation?.Messages || []}
-            sendMessage={sendMessage}
-            clearConversation={clearConversation}
-        />
+        <ThemeProvider>
+            <ChatContainer
+                messages={conversation?.Messages || []}
+                sendMessage={sendMessage}
+                clearConversation={clearConversation}
+            />
+        </ThemeProvider>
     );
 }
