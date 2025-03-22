@@ -6,7 +6,7 @@ from services.chat import ChatService
 from utils.simple_logger import SimpleLogger
 
 chat_service = ChatService()
-logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+logger = SimpleLogger(class_name=__name__).logger
 
 chat_router = APIRouter()
 

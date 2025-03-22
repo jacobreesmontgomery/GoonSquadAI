@@ -1,9 +1,13 @@
 from logging import getLogger, StreamHandler
 from colorlog import ColoredFormatter
 
+from os import getenv
+
+LOG_LEVEL = getenv("LOG_LEVEL", "INFO")
+
 
 class SimpleLogger:
-    def __init__(self, log_level: str = "INFO", class_name: str = "app.py"):
+    def __init__(self, log_level: str = LOG_LEVEL, class_name: str = "app.py"):
         """
         Initialize logger with specified log level.
         """

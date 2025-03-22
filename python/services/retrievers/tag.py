@@ -49,7 +49,7 @@ class TAGRetriever:
         self.db_service: DatabaseService = db_service
         self.openai_service: OpenAIService = openai_client
         self.error_msg: str = ""
-        self.logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+        self.logger = SimpleLogger(class_name=__name__).logger
 
     def establish_schema_description(self) -> str:
         """

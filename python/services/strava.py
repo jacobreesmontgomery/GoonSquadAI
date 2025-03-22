@@ -62,7 +62,7 @@ class StravaAPI:
     def __init__(self, access_token):
         self.access_token = access_token
         self.client = Client(access_token)
-        self.logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+        self.logger = SimpleLogger(class_name=__name__).logger
 
     @retry(
         stop=stop_after_attempt(5),

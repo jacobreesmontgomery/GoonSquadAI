@@ -23,7 +23,7 @@ class OpenAIService:
         self.model: str = (
             getenv("OPENAI_MODEL", "gpt-4o-mini") if model is None else model
         )
-        self.logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+        self.logger = SimpleLogger(class_name=__name__).logger
 
     def process_request(
         self,

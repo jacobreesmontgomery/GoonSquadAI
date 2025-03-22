@@ -13,7 +13,7 @@ class StravaAthleteDao:
 
     def __init__(self, db_service: DatabaseService):
         self.db_service = db_service
-        self.logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+        self.logger = SimpleLogger(class_name=__name__).logger
 
     def upsert_athlete(
         self, athlete_id: int, athlete_name: str, refresh_token: str, email: str

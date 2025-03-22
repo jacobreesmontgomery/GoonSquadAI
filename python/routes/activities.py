@@ -7,7 +7,7 @@ from dao.strava_activities import StravaActivitiesDao
 from utils.simple_logger import SimpleLogger
 
 activities_dao = StravaActivitiesDao()
-logger = SimpleLogger(log_level="INFO", class_name=__name__).logger
+logger = SimpleLogger(class_name=__name__).logger
 
 activities_router = APIRouter()
 
