@@ -43,23 +43,36 @@ export default function Chat() {
             },
             meta: {},
         };
-        axios.post("http://localhost:5001/api/chat", body).then((res) => {
-            console.log("AI response:", res.data.data);
-            const assistantMsg: MessageType = {
-                openai_message: res.data.data.response,
-                props: {
-                    completion_id: res.data.meta.completion_id || null,
-                    executed_query: res.data.meta.executed_query || null,
-                },
-            };
-            const newMessages: MessageType[] = [
-                ...updatedMessages,
-                assistantMsg,
-            ];
+        axios
+            .post("http://localhost:5001/api/chat/process-question", body)
+            .then((res) => {
+                console.log("AI response:", res.data.data);
+                const assistantMsg: MessageType = {
+                    openai_message: res.data.data.response,
+                    props: {
+                        completion_id: res.data.meta.completion_id || null,
+                        executed_query: res.data.meta.executed_query || null,
+                    },
+                };
+                const newMessages: MessageType[] = [
+                    ...updatedMessages,
+                    assistantMsg,
+                ];
 
-            setConversation((prev) => {
-                if (!prev) {
+                setConversation((prev) => {
+                    if (!prev) {
+                        return {
+                            Messages: newMessages,
+                            Options: {
+                                completion_id:
+                                    res.data.meta.completion_id || null,
+                                executed_query:
+                                    res.data.meta.executed_query || null,
+                            },
+                        };
+                    }
                     return {
+                        ...prev,
                         Messages: newMessages,
                         Options: {
                             completion_id: res.data.meta.completion_id || null,
@@ -67,17 +80,8 @@ export default function Chat() {
                                 res.data.meta.executed_query || null,
                         },
                     };
-                }
-                return {
-                    ...prev,
-                    Messages: newMessages,
-                    Options: {
-                        completion_id: res.data.meta.completion_id || null,
-                        executed_query: res.data.meta.executed_query || null,
-                    },
-                };
+                });
             });
-        });
     };
 
     const clearConversation = useCallback(() => {

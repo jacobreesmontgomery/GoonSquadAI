@@ -62,7 +62,10 @@ export default function MessageInput({
 
     return (
         <InputContainer>
-            <NewChatButton onClick={() => clearConversation()}>
+            <NewChatButton
+                title="Start a new chat."
+                onClick={() => clearConversation()}
+            >
                 <NewChatIcon />
             </NewChatButton>
             <Input
