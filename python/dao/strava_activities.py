@@ -36,7 +36,7 @@ class StravaActivitiesDao:
                 insert(Activity)
                 .values(**activity_data)
                 .on_conflict_do_update(
-                    index_elements=["activity_id"],  # The unique constraint column(s)
+                    index_elements=["activity_id"],
                     set_={
                         key: activity_data[key]
                         for key in activity_data

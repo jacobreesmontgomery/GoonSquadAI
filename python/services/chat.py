@@ -19,4 +19,5 @@ class ChatService:
 
         :return The response payload.
         """
+
         return self.retriever.process(user_question=user_question, messages=messages)

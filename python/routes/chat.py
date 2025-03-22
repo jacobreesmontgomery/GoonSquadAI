@@ -2,10 +2,10 @@ from fastapi import APIRouter
 
 from models.base import APIRequestPayload, APIResponsePayload, Empty
 from models.chat import ChatRequest, ChatRequestMeta, ChatResponse, ChatResponseMeta
-from services.chat import ChatService
+from repositories.chat import ChatRepository
 from utils.simple_logger import SimpleLogger
 
-chat_service = ChatService()
+chat_repository = ChatRepository()
 logger = SimpleLogger(class_name=__name__).logger
 
 chat_router = APIRouter()
@@ -34,14 +34,10 @@ class ChatAPI:
         :return The response payload.
         """
 
-        logger.info(
-            f"Processing the most recent message from these messages: {request.data.messages}"
-        )
         messages: list[dict[str, str]] = request.data.messages_to_dict()
         user_question: dict[str, str] = messages[len(messages) - 1]
-        response_payload = chat_service.process(
+        response = chat_repository.process_chat_message(
             user_question=user_question, messages=messages
         )
-        logger.info(f"Chat message processed.")
 
-        return response_payload
+        return response

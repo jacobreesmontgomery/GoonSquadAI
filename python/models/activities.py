@@ -1,5 +1,7 @@
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Optional
+from enum import Enum
+
 from .athlete import Activity as DBActivity
 
 
@@ -31,3 +33,7 @@ class DetailedActivities(BaseModel):
             headers=headers,
             activities=[activity.__dict__ for activity in detailed_activities],
         )
+
+
+class UpdatedActivities(BaseModel):
+    num_updated_activities: int

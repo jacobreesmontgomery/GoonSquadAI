@@ -11,7 +11,7 @@ class StravaAthleteDao:
     Responsible for managing athlete data in the database.
     """
 
-    def __init__(self, db_service: DatabaseService):
+    def __init__(self, db_service: DatabaseService = DatabaseService()):
         self.db_service = db_service
         self.logger = SimpleLogger(class_name=__name__).logger
 
@@ -112,6 +112,23 @@ class StravaAthleteDao:
             return None
         except Exception as e:
             self.logger.error("Error getting athlete ID: %s", e, exc_info=True)
+            raise
+        finally:
+            self.db_service.close_session()
+
+    def get_all_authenticated_athletes(self) -> list[Athlete]:
+        """
+        Retrieves all authenticated athletes from the database.
+
+        Returns:
+            A list of Athlete objects.
+        """
+        self.logger.info("Fetching all athletes")
+        session = self.db_service.get_session()
+        try:
+            return session.query(Athlete).all()
+        except Exception as e:
+            self.logger.error("Error getting athletes: %s", e, exc_info=True)
             raise
         finally:
             self.db_service.close_session()

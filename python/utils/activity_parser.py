@@ -242,7 +242,7 @@ class ActivityParser:
         refresh_token: str,
         start_date: str = None,
         end_date: str = None,
-    ):
+    ) -> int:
         """
         Retrieve all activities for a specific athlete from Strava API,
         format them, and insert into a PostgreSQL database.
@@ -252,7 +252,7 @@ class ActivityParser:
         :param start_date: Limit results to activities after this timestamp.
         :param end_date: Limit results to activities before this timestamp.
 
-        :return: None
+        :return: The number of activities upserted into the database.
         """
         logger.debug("\nSTART of get_and_insert_athlete_activities_into_db()...\n")
 
@@ -266,28 +266,7 @@ class ActivityParser:
         strava_client = StravaAPI(access_token=access_token)
 
         # Retrieve (and format) the athlete's activities between the after and before timeframe
-        activities = strava_client.get_activities(
-            athlete_id=athlete_id, start_date=start_date, end_date=end_date
-        )
-        if not activities:
-            logger.debug(f"No activities were found for athlete {athlete_id}.")
-            return  # No activities to insert
-        detailed_activities = self.convert_activities_to_list_of_dicts_postgres(
-            activities=activities
-        )
-
-        logger.debug("\nSTART of get_and_insert_athlete_activities_into_db()...\n")
-
-        # Get auth client and access token
-        authorization_client = StravaAuthorization(
-            client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI
-        )
-        access_token = authorization_client.exchange_refresh_token(
-            refresh_token=refresh_token
-        )
-        strava_client = StravaAPI(access_token=access_token)
-
-        # Retrieve (and format) the athlete's activities between the after and before timeframe
+        # TODO: Call on get_activities_this_week() instead? Maybe after I get this all up to date first.
         activities = strava_client.get_activities(
             athlete_id=athlete_id, start_date=start_date, end_date=end_date
         )
@@ -299,10 +278,14 @@ class ActivityParser:
         )
 
         # Insert the formatted activities into the PostgreSQL database
+        num_upserted = 0
         for activity in detailed_activities:
-            self.strava_activities_dao.upsert_activity(activity_data=activity)
+            num_upserted += self.strava_activities_dao.upsert_activity(
+                activity_data=activity
+            )
         logger.info(
-            f"Upserted {len(detailed_activities)} activities into strava_api.activities."
+            f"Upserted {num_upserted} activities out of {len(detailed_activities)} total."
         )
 
         logger.debug("END of get_and_insert_athlete_activities_into_db()...\n")
+        return num_upserted

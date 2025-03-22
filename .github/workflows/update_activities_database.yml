@@ -1,0 +1,19 @@
+name: Daily Strava Activities Database Update
+
+on:
+    schedule:
+        # Runs at midnight EST (5 AM UTC)
+        - cron: "0 5 * * *"
+    workflow_dispatch: # Allows manual triggering
+
+jobs:
+    update-database-activities:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Update the activities database with the authenticated athlete's latest activities (new or updated)
+              run: |
+                  curl -X GET "https://http://localhost:5000/api/v1/activities/update-database-activities" \
+                  -H "Content-Type: application/json"
+
+            - name: Log completion time
+              run: echo "Database update completed at $(date)"
