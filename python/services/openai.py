@@ -48,30 +48,3 @@ class OpenAIService:
             model=model, messages=messages, stream=use_streaming, store=store
         )
         return response
-
-    @retry(
-        stop=stop_after_attempt(5),
-        wait=wait_random_exponential(min=1, max=5),
-    )
-    def get_past_messages(self, completion_id: str) -> list[dict[str, str]]:
-        """
-        Retries fetching past messages from a completion.
-
-        :param completion_id: The completion ID.
-
-        :return: The past messages from the completion.
-        """
-
-        try:
-            past_messages = self.client.chat.completions.messages.list(
-                completion_id=completion_id
-            )
-            return [
-                past_msg.model_dump(include={"role", "content"})
-                for past_msg in past_messages
-            ]
-        except Exception as e:
-            self.logger.error(
-                f"Error fetching past messages for completion [{completion_id}]: {e}. Retrying..."
-            )
-            raise e  # Trigger tenacity retry

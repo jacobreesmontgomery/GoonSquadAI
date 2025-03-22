@@ -1,6 +1,6 @@
 from sqlalchemy.dialects.postgresql import insert
 
-from models.activity import Activity
+from models.athlete import Activity
 from services.database import DatabaseService
 from utils.simple_logger import SimpleLogger
 
@@ -10,7 +10,7 @@ class StravaActivitiesDao:
     Responsible for managing Strava activity data in the database.
     """
 
-    def __init__(self, db_service: DatabaseService):
+    def __init__(self, db_service: DatabaseService = DatabaseService()):
         """
         :param db_service: An instance of DatabaseService for session management.
         """
@@ -149,3 +149,19 @@ class StravaActivitiesDao:
         except Exception as e:
             self.logger.error(f"Error fetching basic stats: {e}")
             raise
+
+    def get_detailed_activities(self) -> list[Activity] | None:
+        """
+        Acquires a list of detailed activities to display to the "Database" page.
+        """
+        self.logger.info("Acquiring a list of detailed activities")
+        session = self.db_service.get_session()
+        try:
+            activities = session.query(Activity).all()
+            return activities
+        except Exception as e:
+            session.rollback()
+            self.logger.error(f"Error acquiring the list of detailed activities: {e}")
+            return None
+        finally:
+            self.db_service.close_session()

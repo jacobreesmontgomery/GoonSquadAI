@@ -1,43 +1,81 @@
 import styled from "styled-components";
 import { AuthButton } from "Components/AuthButton";
 
+const HomeContainer = styled.div`
+    background-color: ${(props) => props.theme.homeContainer};
+    border: 0.0625rem solid ${(props) => props.theme.homeContainerBorder};
+    padding: ${(props) => props.theme.contentPadding};
+    max-width: 100%;
+    width: 100%;
+    height: 100%;
+    box-shadow: ${(props) => props.theme.shadow};
+    box-sizing: border-box;
+`;
+
 const Content = styled.div`
     font-size: 1.1rem;
     line-height: 1.6;
+    color: ${(props) => props.theme.text};
+    max-width: 100%;
 `;
 
-const Table = styled.table`
+const TableContainer = styled.div`
     width: 100%;
-    border-collapse: collapse;
+    overflow-x: auto;
     margin-top: 1.25rem;
 `;
 
+const Table = styled.table`
+    border-collapse: collapse;
+    border: 0.0625rem solid ${(props) => props.theme.tableBorder};
+    box-shadow: ${(props) => props.theme.tableShadow};
+    border-radius: 0.25rem;
+    width: 100%;
+`;
+
 const TableHeader = styled.th`
-    background-color: #333;
-    color: #ffffff;
+    background-color: ${(props) => props.theme.tableHeader};
+    color: ${(props) => props.theme.tableHeaderText};
     padding: 0.75rem;
     text-align: left;
 `;
 
 const TableRow = styled.tr`
     &:nth-child(even) {
-        background-color: #f4f4f9;
+        background-color: ${(props) => props.theme.tableRowEven};
+    }
+
+    &:nth-child(odd) {
+        background-color: ${(props) => props.theme.tableRowOdd};
     }
 `;
 
 const TableData = styled.td`
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 0.0625rem solid ${(props) => props.theme.tableBorder};
+    color: ${(props) => props.theme.text};
+`;
+
+const SectionHeader = styled.h2`
+    color: ${(props) => props.theme.welcomeHeader};
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+`;
+
+const ButtonContainer = styled.div`
+    text-align: center;
+    margin: ${(props) => props.theme.authButtonMargin};
 `;
 
 export default function Home() {
     return (
-        <>
-            <div className="stats-container">
-                <h2>Welcome to The Goon Squad homepage!</h2>
-                <Content>
-                    This page is for all of my goons! Here is a rundown of each
-                    tab...
+        <HomeContainer>
+            <SectionHeader>Welcome to The Goon Squad homepage!</SectionHeader>
+            <Content>
+                This page is for all of my goons! Here is a rundown of each
+                tab...
+                <TableContainer>
                     <Table>
                         <thead>
                             <TableRow>
@@ -62,14 +100,11 @@ export default function Home() {
                             </TableRow>
                         </tbody>
                     </Table>
-                </Content>
-                <br />
-                <br />
-                <center>
-                    <AuthButton />
-                </center>
-                <br />
-            </div>
-        </>
+                </TableContainer>
+            </Content>
+            <ButtonContainer>
+                <AuthButton />
+            </ButtonContainer>
+        </HomeContainer>
     );
 }

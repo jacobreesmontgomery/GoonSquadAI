@@ -92,7 +92,9 @@
     "qs": "^6.13.0",
     "range-parser": "^1.2.1",
     "raw-body": "^2.5.2",
+    "react-feather": "^2.0.10",
     "react-markdown": "^10.0.0",
+    "react-modal": "^3.16.3",
     "readdirp": "^3.6.0",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
@@ -123,5 +125,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/react-modal": "^3.16.3"
+  }
 }
