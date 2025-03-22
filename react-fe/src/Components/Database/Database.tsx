@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { Table } from "Components/Table";
-import "../App/App.css";
 import styled from "styled-components";
 
 const SectionHeader = styled.h2`
@@ -11,7 +10,6 @@ const SectionHeader = styled.h2`
 
 const StatsContainer = styled.div`
     background-color: ${(props) => props.theme.cardBackground};
-    border-radius: 0.5rem;
     padding: 1.5rem;
     box-shadow: ${(props) => props.theme.shadow};
     border: 1px solid ${(props) => props.theme.containerBorder};
