@@ -20,7 +20,7 @@ class StravaActivitiesDao:
         """
         self.db_service = db_service
 
-    def upsert_activity(self, activity_data: dict) -> int:
+    async def upsert_activity(self, activity_data: dict) -> int:
         """
         Upserts an activity record into the database. If the activity exists,
         it updates the record; otherwise, it inserts a new record.
@@ -30,34 +30,32 @@ class StravaActivitiesDao:
         :return: The number of rows inserted or updated in the activities table.
         """
         logger.debug("Upserting activity with ID %s", activity_data.get("activity_id"))
-        session = self.db_service.get_session()
-        try:
-            stmt = (
-                insert(Activity)
-                .values(**activity_data)
-                .on_conflict_do_update(
-                    index_elements=["activity_id"],
-                    set_={
-                        key: activity_data[key]
-                        for key in activity_data
-                        if key != "activity_id"
-                    },
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = (
+                    insert(Activity)
+                    .values(**activity_data)
+                    .on_conflict_do_update(
+                        index_elements=["activity_id"],
+                        set_={
+                            key: activity_data[key]
+                            for key in activity_data
+                            if key != "activity_id"
+                        },
+                    )
                 )
-            )
-            result = session.execute(stmt)
-            session.commit()
-            row_count = result.rowcount
-            if row_count > 0:
-                logger.debug(f"Activity successfully upserted.")
-            return row_count
-        except Exception as e:
-            session.rollback()
-            logger.error("Error upserting activity: %s", e, exc_info=True)
-            return 0
-        finally:
-            self.db_service.close_session()
+                result = await session.execute(stmt)
+                await session.commit()
+                row_count = result.rowcount
+                if row_count > 0:
+                    logger.debug(f"Activity successfully upserted.")
+                return row_count
+            except Exception as e:
+                await session.rollback()
+                logger.error("Error upserting activity: %s", e, exc_info=True)
+                return 0
 
-    def get_activity(self, activity_id: int) -> Activity:
+    async def get_activity(self, activity_id: int) -> Activity:
         """
         Retrieves an activity by its ID from the database.
 
@@ -66,16 +64,17 @@ class StravaActivitiesDao:
         :return: An Activity object if found, otherwise None.
         """
         logger.info("Fetching activity with ID %s", activity_id)
-        session = self.db_service.get_session()
-        try:
-            return session.query(Activity).filter_by(activity_id=activity_id).first()
-        except Exception as e:
-            logger.error("Error fetching activity: %s", e, exc_info=True)
-            raise
-        finally:
-            self.db_service.close_session()
+        async with self.db_service.get_async_session() as session:
+            try:
+                result = await session.execute(
+                    session.query(Activity).filter_by(activity_id=activity_id)
+                )
+                return result.scalar_one_or_none()
+            except Exception as e:
+                logger.error("Error fetching activity: %s", e, exc_info=True)
+                raise
 
-    def update_activity(self, activity_id: int, **kwargs) -> bool:
+    async def update_activity(self, activity_id: int, **kwargs) -> bool:
         """
         Updates specific fields of an activity with the specified ID.
 
@@ -85,19 +84,23 @@ class StravaActivitiesDao:
         :return: True if the update was successful, False otherwise.
         """
         logger.info("Updating activity with ID %s", activity_id)
-        session = self.db_service.get_session()
-        try:
-            session.query(Activity).filter_by(activity_id=activity_id).update(kwargs)
-            session.commit()
-            return True
-        except Exception as e:
-            session.rollback()
-            logger.error("Error updating activity: %s", e, exc_info=True)
-            return False
-        finally:
-            self.db_service.close_session()
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = (
+                    session.query(Activity)
+                    .filter_by(activity_id=activity_id)
+                    .update()
+                    .values(**kwargs)
+                )
+                await session.execute(stmt)
+                await session.commit()
+                return True
+            except Exception as e:
+                await session.rollback()
+                logger.error("Error updating activity: %s", e, exc_info=True)
+                return False
 
-    def delete_activity(self, activity_id: int) -> bool:
+    async def delete_activity(self, activity_id: int) -> bool:
         """
         Deletes an activity by its ID from the database.
 
@@ -106,20 +109,21 @@ class StravaActivitiesDao:
         :return: True if the deletion was successful, False otherwise.
         """
         logger.info("Deleting activity with ID %s", activity_id)
-        session = self.db_service.get_session()
-        try:
-            session.query(Activity).filter_by(activity_id=activity_id).delete()
-            session.commit()
-            return True
-        except Exception as e:
-            session.rollback()
-            logger.error("Error deleting activity: %s", e, exc_info=True)
-            return False
-        finally:
-            self.db_service.close_session()
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = (
+                    session.query(Activity).filter_by(activity_id=activity_id).delete()
+                )
+                await session.execute(stmt)
+                await session.commit()
+                return True
+            except Exception as e:
+                await session.rollback()
+                logger.error("Error deleting activity: %s", e, exc_info=True)
+                return False
 
     # TODO - JACOB: Continue working on this. Think through it more and write up SQL query, then convert to SQLAlchemy query.
-    def get_basic_stats(self):
+    async def get_basic_stats(self):
         """
         Gets the basic stats, representing the current week's training, for each authenticated athlete.
 
@@ -136,28 +140,25 @@ class StravaActivitiesDao:
         :return: A dictionary containing basic recap stats grouped by athlete.
         """
         logger.info("Fetching basic stats for all authenticated athletes")
-        session = self.db_service.get_session()
-        try:
-            # TODO: Figure out how to work with the time-based metrics
-            return  # temporary return
-        except Exception as e:
-            logger.error(f"Error fetching basic stats: {e}")
-            raise
+        async with self.db_service.get_async_session() as session:
+            try:
+                # TODO: Figure out how to work with the time-based metrics
+                return  # temporary return
+            except Exception as e:
+                logger.error(f"Error fetching basic stats: {e}")
+                raise
 
-    def get_detailed_activities(self) -> list[Activity] | None:
+    async def get_detailed_activities(self) -> list[Activity] | None:
         """
         Acquires a list of all detailed activities from the database to display on the "Database" page.
 
         :return: A list of Activity objects if successful, None otherwise.
         """
         logger.info("Acquiring a list of detailed activities")
-        session = self.db_service.get_session()
-        try:
-            activities = session.query(Activity).all()
-            return activities
-        except Exception as e:
-            session.rollback()
-            logger.error(f"Error acquiring the list of detailed activities: {e}")
-            return None
-        finally:
-            self.db_service.close_session()
+        async with self.db_service.get_async_session() as session:
+            try:
+                result = await session.execute(session.query(Activity)).all()
+                return result
+            except Exception as e:
+                logger.error(f"Error acquiring the list of detailed activities: {e}")
+                return None

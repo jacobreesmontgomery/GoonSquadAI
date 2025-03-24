@@ -8,7 +8,7 @@ class ChatService:
         # Eventually we'll need an intent router to determine which retriever to use
         self.retriever = TAGRetriever()
 
-    def process(
+    async def process(
         self, user_question: dict[str, str], messages: list[dict[str, str]]
     ) -> APIResponsePayload[ChatResponse, ChatResponseMeta]:
         """
@@ -20,4 +20,6 @@ class ChatService:
         :return The response payload.
         """
 
-        return self.retriever.process(user_question=user_question, messages=messages)
+        return await self.retriever.process(
+            user_question=user_question, messages=messages
+        )

@@ -2,7 +2,11 @@ from fastapi import APIRouter, Request
 
 from typing import Any
 from models.base import Empty, APIRequestPayload, APIResponsePayload
-from models.activities import DetailedActivities, UpdatedActivities
+from models.activities import (
+    DetailedActivities,
+    AllUpdatedActivities,
+    UpdateDatabaseActivitiesRequest,
+)
 from dao.strava_activities import StravaActivitiesDao
 from repositories.activities import ActivitiesRepository
 from utils.simple_logger import SimpleLogger
@@ -44,25 +48,28 @@ class ActivitiesAPI:
         Retrieves detailed statistics for all activities for the authenticated athlete.
         """
 
-        response = activities_repository.get_detailed_activities()
+        response = await activities_repository.get_detailed_activities()
 
         return response
 
-    # TODO: Complete this route
-    @activities_router.get(
+    @activities_router.post(
         "/activities/update-database-activities",
         summary="Updates the database with the latest activities.",
         description="Updates the database with the latest activities (new or updated) for each authenticated athlete.",
         status_code=200,
-        response_model=APIResponsePayload[UpdatedActivities, Empty],
+        response_model=APIResponsePayload[AllUpdatedActivities, Empty],
     )
     async def update_database_activities(
-        request: Request,
-    ) -> APIResponsePayload[UpdatedActivities, Empty]:
+        payload: APIRequestPayload[UpdateDatabaseActivitiesRequest, Empty],
+    ) -> APIResponsePayload[AllUpdatedActivities, Empty]:
         """
         Updates the database with the latest activities for each authenticated athlete.
         """
 
-        response = activities_repository.update_database_activities()
+        response = await activities_repository.update_database_activities(
+            start_date=payload.data.start_date,
+            end_date=payload.data.end_date,
+            limit=payload.data.limit,
+        )
 
         return response

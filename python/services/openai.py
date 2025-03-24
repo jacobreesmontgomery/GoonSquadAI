@@ -25,7 +25,7 @@ class OpenAIService:
         )
         self.logger = SimpleLogger(class_name=__name__).logger
 
-    def process_request(
+    async def process_request(
         self,
         messages: list[dict[str, str]],
         model: str = None,

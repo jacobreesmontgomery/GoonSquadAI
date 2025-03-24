@@ -35,5 +35,30 @@ class DetailedActivities(BaseModel):
         )
 
 
-class UpdatedActivities(BaseModel):
+class UpdateDatabaseActivitiesRequest(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    limit: Optional[int] = None
+
+
+class UpdatedAthleteActivities(BaseModel):
+    athlete_id: int
     num_updated_activities: int
+
+    @classmethod
+    def model_validate(
+        cls, athlete_id: int, num_updated_activities: int
+    ) -> "UpdatedAthleteActivities":
+        """
+        Validates the UpdatedAthleteActivities model.
+
+        :param data: The data to validate.
+
+        :return: The validated UpdatedAthleteActivities model.
+        """
+
+        return cls(athlete_id=athlete_id, num_updated_activities=num_updated_activities)
+
+
+class AllUpdatedActivities(BaseModel):
+    updated_activities: list[UpdatedAthleteActivities]

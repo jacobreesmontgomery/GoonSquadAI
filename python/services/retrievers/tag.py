@@ -84,7 +84,7 @@ class TAGRetriever:
             [QueryGenerationException, QueryExecutionException]
         ),
     )
-    def execute_query(
+    async def execute_query(
         self,
         user_question: dict[str, str],
         messages: list[dict[str, str]],
@@ -123,7 +123,7 @@ class TAGRetriever:
         )
 
         self.logger.debug(f"Messages being fed in to the LLM:\n{messages}")
-        query_result = self.openai_service.process_request(
+        query_result = await self.openai_service.process_request(
             messages=messages,
             model=gpt_model if gpt_model else self.openai_service.model,
         )
@@ -158,23 +158,23 @@ class TAGRetriever:
                 message=self.error_msg
             )  # Hit the retry mechanism
 
-        # Execute the query
-        session = self.db_service.get_session()
-        try:
-            self.logger.debug(f"\nExecuting this generated query: {query_to_execute}")
-            result = session.execute(text(query_to_execute)).fetchall()
-        except Exception as e:
-            self.error_msg = f"An error occurred while executing this query: {query_to_execute}.\nHere is the error: {e}\nPlease generate a query to resolve this issue.\n"
-            self.logger.error(self.error_msg)
-            self.db_service.close_session()  # Close session before retry
-            raise QueryExecutionException(
-                message=self.error_msg
-            )  # Hit the retry mechanism
-        self.db_service.close_session()
+        # Execute the query using async session
+        async with self.db_service.get_async_session() as session:
+            try:
+                self.logger.debug(
+                    f"\nExecuting this generated query: {query_to_execute}"
+                )
+                result = await session.execute(text(query_to_execute)).fetchall()
+            except Exception as e:
+                self.error_msg = f"An error occurred while executing this query: {query_to_execute}.\nHere is the error: {e}\nPlease generate a query to resolve this issue.\n"
+                self.logger.error(self.error_msg)
+                raise QueryExecutionException(
+                    message=self.error_msg
+                )  # Hit the retry mechanism
 
         return result, len(result), completion_id, query_to_execute
 
-    def process(
+    async def process(
         self,
         user_question: dict[str, str],
         messages: list[dict[str, str]],
@@ -190,7 +190,9 @@ class TAGRetriever:
         :return The response payload.
         """
 
-        result = self.execute_query(user_question=user_question, messages=messages)
+        result = await self.execute_query(
+            user_question=user_question, messages=messages
+        )
 
         if isinstance(result, str):
             # The LLM had low confidence and provided follow-up questions
@@ -232,7 +234,7 @@ class TAGRetriever:
             }
         )
         ai_response = (
-            self.openai_service.process_request(
+            await self.openai_service.process_request(
                 messages=messages,
                 model=gpt_model if gpt_model else self.openai_service.model,
             )

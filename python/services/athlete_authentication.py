@@ -41,13 +41,13 @@ class NewAthletesAPI:
             auth = StravaAuthorization(CLIENT_ID, CLIENT_SECRET, f"{REDIRECT_URI}")
 
             # Acquire a refresh token
-            token_response = auth.exchange_authorization_code(code)
+            token_response = await auth.exchange_authorization_code(code)
             access_token = token_response["access_token"]
             refresh_token = token_response["refresh_token"]
 
             # Acquire athlete information with the access token
             client = StravaAPI(access_token=access_token)
-            athlete_data = client.get_athlete_data()
+            athlete_data = await client.get_athlete_data()
             if not athlete_data:
                 return {"message": "Failed to retrieve athlete information"}
             athlete_id = athlete_data.id
@@ -55,7 +55,7 @@ class NewAthletesAPI:
             athlete_email = athlete_data.email
 
             # Upsert the athlete's data to the strava_api.athletes DB table
-            rows_affected = athlete_db_engine.upsert_athlete(
+            rows_affected = await athlete_db_engine.upsert_athlete(
                 athlete_id=athlete_id,
                 athlete_name=athlete_name,
                 refresh_token=refresh_token,

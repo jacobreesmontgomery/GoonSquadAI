@@ -26,12 +26,12 @@ class StravaAuthorization:
         self.redirect_uri = redirect_uri if redirect_uri else getenv("REDIRECT_URI")
         self.client = Client()
 
-    def get_authorization_url(self) -> str:
+    async def get_authorization_url(self) -> str:
         return self.client.authorization_url(
             client_id=self.client_id, redirect_uri=self.redirect_uri
         )
 
-    def exchange_refresh_token(self, refresh_token: str) -> str:
+    async def exchange_refresh_token(self, refresh_token: str) -> str:
         token_response = self.client.refresh_access_token(
             client_id=self.client_id,
             client_secret=self.client_secret,
@@ -39,7 +39,7 @@ class StravaAuthorization:
         )
         return token_response["access_token"]
 
-    def exchange_authorization_code(self, code):
+    async def exchange_authorization_code(self, code):
         token_response = self.client.exchange_code_for_token(
             client_id=self.client_id, client_secret=self.client_secret, code=code
         )
@@ -69,17 +69,25 @@ class StravaAPI:
         wait=wait_exponential(min=1, max=60),
         retry=retry_if_exception_type(ActivityRetrievalException),
     )
-    def fetch_activities(
-        self, start_date: str = None, end_date: str = None
+    async def fetch_activities(
+        self,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
     ) -> list[Activity] | None:
         """
         Retrieves all activities for the authenticated athlete.
 
-        Returns:
-            A list of activities for the authenticated athlete.
+        :param start_date: The start date, as an epoch timestamp, of the timeframe for activities (optional)
+        :param end_date: The end date, as an epoch timestamp, of the timeframe for activities (optional)
+        :param limit: The maximum number of activities to retrieve (optional)
+
+        :return: A list of activities for the authenticated athlete.
         """
         try:
-            return self.client.get_activities(after=start_date, before=end_date)
+            return self.client.get_activities(
+                after=start_date, before=end_date, limit=limit
+            )
         except RateLimitExceeded as e:
             self.logger.error(f"Strava API rate limit exceeded: {e}")
             return None
@@ -97,7 +105,7 @@ class StravaAPI:
         wait=wait_exponential(min=1, max=60),
         retry=retry_if_exception_type(ActivityRetrievalException),
     )
-    def fetch_detailed_activity(self, activity_id: int) -> Activity | None:
+    async def fetch_detailed_activity(self, activity_id: int) -> Activity | None:
         """
         Retrieves the detailed activity with the given ID.
 
@@ -127,7 +135,9 @@ class StravaAPI:
                 f"Failed to retrieve detailed activity with ID [{activity_id}]: {e}"
             )
 
-    def get_detailed_activities(self, activities: list[Activity]) -> list[Activity]:
+    async def get_detailed_activities(
+        self, activities: list[Activity]
+    ) -> list[Activity]:
         """
         Gets the detailed activities.
 
@@ -143,7 +153,7 @@ class StravaAPI:
         detailed_activities: list[Activity] = []  # Type hinting and initialization
         for activity_id, activity_type in activity_ids_and_type:
             if activity_type == "Run":  # Only including runs (for now)
-                detailed_activity = self.fetch_detailed_activity(
+                detailed_activity = await self.fetch_detailed_activity(
                     activity_id=activity_id
                 )
                 if not detailed_activity:
@@ -159,9 +169,9 @@ class StravaAPI:
         self.logger.info(f"Returning {len(detailed_activities)} detailed activities.")
         return detailed_activities
 
-    def get_activities_this_week(self) -> list[Activity]:
+    async def get_activities_this_week(self) -> list[Activity]:
         """
-        Gets the atlete's activities for the current week.
+        Gets the athlete's activities for the current week.
 
         Returns:
             List[Activity]: A list of the current week's activities
@@ -176,18 +186,22 @@ class StravaAPI:
         )
 
         # Retrieve activities within the current week
-        activities = self.fetch_activities(
+        activities = await self.fetch_activities(
             start_date=start_of_week, end_date=end_of_week
         )
         if not activities:
             return []  # No activities acquired, return an empty list
 
         # Get the detailed activities from the basic list above
-        detailed_activities = self.get_detailed_activities(activities=activities)
+        detailed_activities = await self.get_detailed_activities(activities=activities)
         return detailed_activities
 
-    def get_activities(
-        self, athlete_id: int, start_date: str = None, end_date: str = None
+    async def get_activities(
+        self,
+        athlete_id: int,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
     ) -> list[Activity]:
         """
         Gets the athlete's activities for a default, or specified, timeframe.
@@ -196,15 +210,20 @@ class StravaAPI:
             athlete_id: The athlete's ID
             start_date: The start date, as an epoch timestamp, of the timeframe for activities (optional)
             end_date: The end date, as an epoch timestamp, of the timeframe for activities (optional)
+            limit: The maximum number of activities to retrieve (optional)
 
         Returns:
             list[Activity]: A list of activities for the specified athlete and timeframe.
         """
         try:
-            activities = self.fetch_activities(start_date=start_date, end_date=end_date)
+            activities = await self.fetch_activities(
+                start_date=start_date, end_date=end_date, limit=limit
+            )
             if not activities:
                 return []  # No activities acquired, return an empty list
-            detailed_activities = self.get_detailed_activities(activities=activities)
+            detailed_activities = await self.get_detailed_activities(
+                activities=activities
+            )
             return detailed_activities
         except Exception as e:
             self.logger.error(
@@ -212,7 +231,7 @@ class StravaAPI:
             )
             return None
 
-    def get_athlete_data(self) -> Athlete:
+    async def get_athlete_data(self) -> Athlete:
         """
         Gets the athlete's basic information via the /athlete endpoint.
 

@@ -6,7 +6,7 @@ class ChatRepository:
     def __init__(self):
         self.chat_service = ChatService()
 
-    def process_chat_message(
+    async def process_chat_message(
         self, user_question: dict[str, str], messages: list[dict[str, str]]
     ):
         """
@@ -18,7 +18,7 @@ class ChatRepository:
         :return The response payload.
         """
 
-        response = self.chat_service.process(
+        response = await self.chat_service.process(
             user_question=user_question, messages=messages
         )
 

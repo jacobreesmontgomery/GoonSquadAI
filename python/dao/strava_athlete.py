@@ -1,9 +1,12 @@
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.future import select
 
 from models.athlete import Athlete
 from services.database import DatabaseService
 from utils.simple_logger import SimpleLogger
+
+logger = SimpleLogger(class_name=__name__).logger
 
 
 class StravaAthleteDao:
@@ -13,9 +16,8 @@ class StravaAthleteDao:
 
     def __init__(self, db_service: DatabaseService = DatabaseService()):
         self.db_service = db_service
-        self.logger = SimpleLogger(class_name=__name__).logger
 
-    def upsert_athlete(
+    async def upsert_athlete(
         self, athlete_id: int, athlete_name: str, refresh_token: str, email: str
     ) -> int:
         """
@@ -30,41 +32,39 @@ class StravaAthleteDao:
         Returns:
             The athlete's ID after the upsert operation.
         """
-        self.logger.info("Upserting athlete with ID %s", athlete_id)
-        session = self.db_service.get_session()
-        try:
-            stmt = (
-                insert(Athlete)
-                .values(
-                    athlete_id=athlete_id,
-                    athlete_name=athlete_name,
-                    refresh_token=refresh_token,
-                    email=email,
+        logger.info("Upserting athlete with ID %s", athlete_id)
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = (
+                    insert(Athlete)
+                    .values(
+                        athlete_id=athlete_id,
+                        athlete_name=athlete_name,
+                        refresh_token=refresh_token,
+                        email=email,
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[
+                            "athlete_id"
+                        ],  # Conflict target (e.g., primary key)
+                        set_={
+                            "athlete_name": athlete_name,
+                            "refresh_token": refresh_token,
+                            "email": email,
+                        },
+                    )
                 )
-                .on_conflict_do_update(
-                    index_elements=[
-                        "athlete_id"
-                    ],  # Conflict target (e.g., primary key)
-                    set_={
-                        "athlete_name": athlete_name,
-                        "refresh_token": refresh_token,
-                        "email": email,
-                    },
-                )
-            )
-            result = session.execute(stmt)
-            session.commit()
-            row_count = result.rowcount
-            self.logger.info(f"{row_count} rows were updated")
-            return row_count
-        except Exception as e:
-            session.rollback()
-            self.logger.error("Error upserting athlete: %s", e, exc_info=True)
-            return 0
-        finally:
-            self.db_service.close_session()
+                result = await session.execute(stmt)
+                await session.commit()
+                row_count = result.rowcount
+                logger.info(f"{row_count} rows were updated")
+                return row_count
+            except Exception as e:
+                await session.rollback()
+                logger.error("Error upserting athlete: %s", e, exc_info=True)
+                return 0
 
-    def get_athlete(self, athlete_id: int) -> Athlete:
+    async def get_athlete(self, athlete_id: int) -> Athlete:
         """
         Retrieves an athlete by their ID.
 
@@ -74,20 +74,20 @@ class StravaAthleteDao:
         Returns:
             An Athlete object (or None if not found).
         """
-        self.logger.info("Fetching athlete with ID %s", athlete_id)
-        session = self.db_service.get_session()
-        try:
-            return session.query(Athlete).filter_by(athlete_id=athlete_id).first()
-        except NoResultFound:
-            self.logger.warning("No athlete found with ID %s", athlete_id)
-            return None
-        except Exception as e:
-            self.logger.error("Error getting athlete: %s", e, exc_info=True)
-            raise
-        finally:
-            self.db_service.close_session()
+        logger.info("Fetching athlete with ID %s", athlete_id)
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = select(Athlete).where(Athlete.athlete_id == athlete_id)
+                result = await session.execute(stmt)
+                return result.scalars().first()
+            except NoResultFound:
+                logger.warning("No athlete found with ID %s", athlete_id)
+                return None
+            except Exception as e:
+                logger.error("Error getting athlete: %s", e, exc_info=True)
+                raise
 
-    def get_athlete_id(self, athlete_name: str) -> int:
+    async def get_athlete_id(self, athlete_name: str) -> int:
         """
         Retrieves an athlete's ID by their name.
 
@@ -97,43 +97,41 @@ class StravaAthleteDao:
         Returns:
             An int representing the athlete's ID (or None if not found).
         """
-        self.logger.info("Fetching athlete ID for '%s'", athlete_name)
-        session = self.db_service.get_session()
-        try:
-            athlete = (
-                session.query(Athlete).filter_by(athlete_name=athlete_name).first()
-            )
-            if athlete:
-                self.logger.info(
-                    f"Acquired athlete ID of {athlete.athlete_id} for {athlete_name}"
-                )
-                return athlete.athlete_id
-            self.logger.info("No athlete ID was found.")
-            return None
-        except Exception as e:
-            self.logger.error("Error getting athlete ID: %s", e, exc_info=True)
-            raise
-        finally:
-            self.db_service.close_session()
+        logger.info("Fetching athlete ID for '%s'", athlete_name)
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = select(Athlete).where(Athlete.athlete_name == athlete_name)
+                result = await session.execute(stmt)
+                athlete: Athlete = result.scalars().first()
+                if athlete:
+                    logger.info(
+                        f"Acquired athlete ID of {athlete.athlete_id} for {athlete_name}"
+                    )
+                    return athlete.athlete_id
+                logger.info("No athlete ID was found.")
+                return None
+            except Exception as e:
+                logger.error("Error getting athlete ID: %s", e, exc_info=True)
+                raise
 
-    def get_all_authenticated_athletes(self) -> list[Athlete]:
+    async def get_all_authenticated_athletes(self) -> list[Athlete]:
         """
         Retrieves all authenticated athletes from the database.
 
         Returns:
             A list of Athlete objects.
         """
-        self.logger.info("Fetching all athletes")
-        session = self.db_service.get_session()
-        try:
-            return session.query(Athlete).all()
-        except Exception as e:
-            self.logger.error("Error getting athletes: %s", e, exc_info=True)
-            raise
-        finally:
-            self.db_service.close_session()
+        logger.info("Fetching all athletes")
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = select(Athlete)
+                result = await session.execute(stmt)
+                return result.scalars().all()
+            except Exception as e:
+                logger.error("Error getting athletes: %s", e, exc_info=True)
+                raise
 
-    def update_athlete(
+    async def update_athlete(
         self,
         athlete_id: int,
         athlete_name: str = None,
@@ -152,32 +150,33 @@ class StravaAthleteDao:
         Returns:
             A boolean indicating whether or not the athlete's details were updated.
         """
-        self.logger.info("Updating athlete with ID %s", athlete_id)
-        session = self.db_service.get_session()
-        try:
-            athlete = session.query(Athlete).filter_by(athlete_id=athlete_id).first()
-            if not athlete:
-                self.logger.warning("No athlete found with ID %s", athlete_id)
+        logger.info("Updating athlete with ID %s", athlete_id)
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = select(Athlete).where(Athlete.athlete_id == athlete_id)
+                result = await session.execute(stmt)
+                athlete: Athlete = result.scalars().first()
+
+                if not athlete:
+                    logger.warning("No athlete found with ID %s", athlete_id)
+                    return False
+
+                if athlete_name:
+                    athlete.athlete_name = athlete_name
+                if refresh_token:
+                    athlete.refresh_token = refresh_token
+                if email:
+                    athlete.email = email
+
+                await session.commit()
+                logger.info("Athlete with ID %s updated", athlete_id)
+                return True
+            except Exception as e:
+                await session.rollback()
+                logger.error("Error updating athlete: %s", e, exc_info=True)
                 return False
 
-            if athlete_name:
-                athlete.athlete_name = athlete_name
-            if refresh_token:
-                athlete.refresh_token = refresh_token
-            if email:
-                athlete.email = email
-
-            session.commit()
-            self.logger.info("Athlete with ID %s updated", athlete_id)
-            return True
-        except Exception as e:
-            session.rollback()
-            self.logger.error("Error updating athlete: %s", e, exc_info=True)
-            return False
-        finally:
-            self.db_service.close_session()
-
-    def delete_athlete(self, athlete_id: int) -> bool:
+    async def delete_athlete(self, athlete_id: int) -> bool:
         """
         Deletes an athlete from the database.
 
@@ -187,21 +186,22 @@ class StravaAthleteDao:
         Returns:
             A boolean indicating whether or not the athlete was deleted.
         """
-        self.logger.info("Deleting athlete with ID %s", athlete_id)
-        session = self.db_service.get_session()
-        try:
-            athlete = session.query(Athlete).filter_by(athlete_id=athlete_id).first()
-            if not athlete:
-                self.logger.warning("No athlete found with ID %s", athlete_id)
-                return False
+        logger.info("Deleting athlete with ID %s", athlete_id)
+        async with self.db_service.get_async_session() as session:
+            try:
+                stmt = select(Athlete).where(Athlete.athlete_id == athlete_id)
+                result = await session.execute(stmt)
+                athlete: Athlete = result.scalars().first()
 
-            session.delete(athlete)
-            session.commit()
-            self.logger.info("Athlete with ID %s deleted", athlete_id)
-            return True
-        except Exception as e:
-            session.rollback()
-            self.logger.error("Error deleting athlete: %s", e, exc_info=True)
-            return False
-        finally:
-            self.db_service.close_session()
+                if not athlete:
+                    logger.warning("No athlete found with ID %s", athlete_id)
+                    return False
+
+                await session.delete(athlete)
+                await session.commit()
+                logger.info("Athlete with ID %s deleted", athlete_id)
+                return True
+            except Exception as e:
+                await session.rollback()
+                logger.error("Error deleting athlete: %s", e, exc_info=True)
+                return False

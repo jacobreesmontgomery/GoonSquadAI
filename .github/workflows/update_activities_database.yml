@@ -6,14 +6,35 @@ on:
         - cron: "0 5 * * *"
     workflow_dispatch: # Allows manual triggering
 
+env:
+    API_URL: "http://localhost:5000/api/v1" # TODO: Update to dev/prod URL (once applicable)
+
 jobs:
     update-database-activities:
         runs-on: ubuntu-latest
         steps:
-            - name: Update the activities database with the authenticated athlete's latest activities (new or updated)
+            - name: Update the activities database with the authenticated athlete's latest activities
               run: |
-                  curl -X GET "https://http://localhost:5000/api/v1/activities/update-database-activities" \
-                  -H "Content-Type: application/json"
+                  echo "Starting database update at $(date)"
+
+                  # Make the API request
+                  HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" \
+                    -X POST "${API_URL}/activities/update-database-activities" \
+                    -H "Content-Type: application/json" \
+                    -d '{
+                      "data": {},
+                      "meta": {}
+                    }')
+
+                  # Check response status
+                  if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+                    echo "Database update succeeded with status: $HTTP_STATUS"
+                    cat response.json | jq . || echo "Response is not valid JSON"
+                  else
+                    echo "Database update failed with status: $HTTP_STATUS"
+                    cat response.json || echo "No response body"
+                    exit 1
+                  fi
 
             - name: Log completion time
               run: echo "Database update completed at $(date)"

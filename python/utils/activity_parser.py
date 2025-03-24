@@ -1,6 +1,7 @@
 from datetime import datetime, time
 from re import findall
 from os import getenv
+from pytz import timezone
 from stravalib.model import Activity
 
 from services.database import DatabaseService
@@ -68,11 +69,12 @@ class ActivityParser:
         month = int(start_date.strftime("%m"))
         day = int(start_date.strftime("%d"))
         year = int(start_date.strftime("%Y"))
+
+        # Create a naive time object without timezone info to avoid mixing aware and naive objects
         run_time = time(
             hour=start_date.hour,
             minute=start_date.minute,
             second=start_date.second,
-            tzinfo=start_date.tzinfo,
         )
 
         logger.debug(
@@ -80,7 +82,7 @@ class ActivityParser:
         )
         return run_time, week_day, month, day, year
 
-    def convert_activities_to_list_of_dicts_postgres(
+    async def convert_activities_to_list_of_dicts_postgres(
         self, activities: list[Activity]
     ) -> list[dict]:
         """
@@ -111,6 +113,17 @@ class ActivityParser:
                 float(activity.distance * 0.000621371),
             )
 
+            # Convert timezone-aware datetime to naive for database
+            utc_datetime = activity.start_date.astimezone(tz=timezone("UTC"))
+            naive_datetime = datetime(
+                utc_datetime.year,
+                utc_datetime.month,
+                utc_datetime.day,
+                utc_datetime.hour,
+                utc_datetime.minute,
+                utc_datetime.second,
+            )
+
             # Establishing the activity dict
             activity_dict = {
                 "activity_id": activity.id,
@@ -125,7 +138,7 @@ class ActivityParser:
                 "avg_speed_ft_s": round(
                     float(str(activity.average_speed).split()[0]) * 3.28084, 2
                 ),
-                "full_datetime": activity.start_date,
+                "full_datetime": naive_datetime,
                 "time": run_time,
                 "week_day": week_day,
                 "month": month,
@@ -236,12 +249,13 @@ class ActivityParser:
         )
         return longest_run, longest_run_date
 
-    def get_and_insert_athlete_activities_into_db(
+    async def get_and_insert_athlete_activities_into_db(
         self,
         athlete_id: int,
         refresh_token: str,
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
     ) -> int:
         """
         Retrieve all activities for a specific athlete from Strava API,
@@ -251,6 +265,7 @@ class ActivityParser:
         :param refresh_token: The athlete's refresh token.
         :param start_date: Limit results to activities after this timestamp.
         :param end_date: Limit results to activities before this timestamp.
+        :param limit: Limit the number of activities returned.
 
         :return: The number of activities upserted into the database.
         """
@@ -260,31 +275,40 @@ class ActivityParser:
         authorization_client = StravaAuthorization(
             client_id=CLIENT_ID, client_secret=CLIENT_SECRET, redirect_uri=REDIRECT_URI
         )
-        access_token = authorization_client.exchange_refresh_token(
+        access_token = await authorization_client.exchange_refresh_token(
             refresh_token=refresh_token
         )
         strava_client = StravaAPI(access_token=access_token)
 
-        # Retrieve (and format) the athlete's activities between the after and before timeframe
-        # TODO: Call on get_activities_this_week() instead? Maybe after I get this all up to date first.
-        activities = strava_client.get_activities(
-            athlete_id=athlete_id, start_date=start_date, end_date=end_date
-        )
+        # Retrieve (and format) the athlete's activities based on the incoming parameters
+        if any([start_date or end_date or limit]):
+            activities = await strava_client.get_activities(
+                athlete_id=athlete_id,
+                start_date=start_date,
+                end_date=end_date,
+                limit=limit,
+            )
+        else:
+            activities = await strava_client.get_activities_this_week()
+
         if not activities:
             logger.debug(f"No activities were found for athlete {athlete_id}.")
-            return  # No activities to insert
-        detailed_activities = self.convert_activities_to_list_of_dicts_postgres(
+            return 0  # No activities to insert
+
+        detailed_activities = await self.convert_activities_to_list_of_dicts_postgres(
             activities=activities
         )
 
         # Insert the formatted activities into the PostgreSQL database
         num_upserted = 0
         for activity in detailed_activities:
-            num_upserted += self.strava_activities_dao.upsert_activity(
+            upsert_result = await self.strava_activities_dao.upsert_activity(
                 activity_data=activity
             )
+            num_upserted += upsert_result
+
         logger.info(
-            f"Upserted {num_upserted} activities out of {len(detailed_activities)} total."
+            f"Upserted {num_upserted} activities out of {len(detailed_activities)} total for athlete [{athlete_id}]."
         )
 
         logger.debug("END of get_and_insert_athlete_activities_into_db()...\n")
