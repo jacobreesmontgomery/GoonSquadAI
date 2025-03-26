@@ -22,7 +22,7 @@ const MessageContainer = styled.div<{ isUser: boolean }>`
 
 const MessageBubble = styled.div<{ isUser: boolean }>`
     position: relative;
-    max-width: 80%;
+    max-width: 60%;
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
     background-color: ${(props) =>
