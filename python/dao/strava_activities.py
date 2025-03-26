@@ -157,8 +157,8 @@ class StravaActivitiesDao:
         logger.info("Acquiring a list of detailed activities")
         async with self.db_service.get_async_session() as session:
             try:
-                result = await session.execute(session.query(Activity)).all()
-                return result
+                query_result = await session.execute(session.query(Activity))
+                return query_result.all()
             except Exception as e:
                 logger.error(f"Error acquiring the list of detailed activities: {e}")
                 return None

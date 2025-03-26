@@ -6,6 +6,7 @@ from tenacity import (
     retry_if_exception_type,
 )
 from json import loads
+from openai.types.chat import ChatCompletion
 
 from prompts.tag import tag_prompt
 from models.athlete import Activity, Athlete
@@ -123,7 +124,7 @@ class TAGRetriever:
         )
 
         self.logger.debug(f"Messages being fed in to the LLM:\n{messages}")
-        query_result = await self.openai_service.process_request(
+        query_result: ChatCompletion = await self.openai_service.process_request(
             messages=messages,
             model=gpt_model if gpt_model else self.openai_service.model,
         )
@@ -164,7 +165,8 @@ class TAGRetriever:
                 self.logger.debug(
                     f"\nExecuting this generated query: {query_to_execute}"
                 )
-                result = await session.execute(text(query_to_execute)).fetchall()
+                query_result = await session.execute(text(query_to_execute))
+                result = query_result.fetchall()
             except Exception as e:
                 self.error_msg = f"An error occurred while executing this query: {query_to_execute}.\nHere is the error: {e}\nPlease generate a query to resolve this issue.\n"
                 self.logger.error(self.error_msg)
@@ -233,14 +235,11 @@ class TAGRetriever:
                 """,
             }
         )
-        ai_response = (
-            await self.openai_service.process_request(
-                messages=messages,
-                model=gpt_model if gpt_model else self.openai_service.model,
-            )
-            .choices[0]
-            .message.content
+        response: ChatCompletion = await self.openai_service.process_request(
+            messages=messages,
+            model=gpt_model if gpt_model else self.openai_service.model,
         )
+        ai_response = response.choices[0].message.content
         self.logger.debug(f"\n{ai_response}")
 
         return APIResponsePayload(
