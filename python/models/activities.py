@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Any, Optional
 from enum import Enum
 
@@ -39,6 +39,13 @@ class UpdateDatabaseActivitiesRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     limit: Optional[int] = None
+    athlete_ids: Optional[list[int]] = None
+
+    @validator("athlete_ids")
+    def validate_athlete_ids(cls, v):
+        if v is not None and len(v) == 0:
+            raise ValueError("athlete_ids cannot be an empty list")
+        return v
 
 
 class UpdatedAthleteActivities(BaseModel):

@@ -58,6 +58,7 @@ class ActivitiesRepository:
         start_date: str | None = None,
         end_date: str | None = None,
         limit: int | None = None,
+        athlete_ids: list[int] | None = None,
     ) -> APIResponsePayload[AllUpdatedActivities, Empty]:
         """
         Updates the database with the latest activities asynchronously for each athlete.
@@ -65,7 +66,26 @@ class ActivitiesRepository:
 
         logger.info("Updating the database with the latest activities asynchronously.")
 
-        all_users = await self.strava_athlete_dao.get_all_authenticated_athletes()
+        athletes_to_process: list[Athlete] = []
+        if athlete_ids:
+            for athlete_id in athlete_ids:
+                athlete = await self.strava_athlete_dao.get_athlete(
+                    athlete_id=athlete_id
+                )
+                if athlete:
+                    athletes_to_process.append(athlete)
+                else:
+                    logger.warning(f"Athlete with ID {athlete_id} not found.")
+        else:
+            athletes_to_process = (
+                await self.strava_athlete_dao.get_all_authenticated_athletes()
+            )
+
+        if not athletes_to_process:
+            logger.warning("No athletes to process.")
+            return APIResponsePayload(
+                data=AllUpdatedActivities(updated_activities=[]), meta=Empty()
+            )
 
         async def process_user(user: Athlete) -> UpdatedAthleteActivities:
             """Process a single user's activities asynchronously"""
@@ -89,7 +109,7 @@ class ActivitiesRepository:
                 )
 
         # Create and gather all tasks
-        tasks = [process_user(user) for user in all_users]
+        tasks = [process_user(user) for user in athletes_to_process]
         updated_athlete_activities = await gather(*tasks)
 
         return APIResponsePayload(

@@ -1,4 +1,5 @@
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import select
 
 from models.athlete import Activity
 from services.database import DatabaseService
@@ -55,7 +56,7 @@ class StravaActivitiesDao:
                 logger.error("Error upserting activity: %s", e, exc_info=True)
                 return 0
 
-    async def get_activity(self, activity_id: int) -> Activity:
+    async def get_activity(self, activity_id: int) -> Activity | None:
         """
         Retrieves an activity by its ID from the database.
 
@@ -63,12 +64,11 @@ class StravaActivitiesDao:
 
         :return: An Activity object if found, otherwise None.
         """
-        logger.info("Fetching activity with ID %s", activity_id)
+        logger.debug("Fetching activity with ID %s", activity_id)
         async with self.db_service.get_async_session() as session:
             try:
-                result = await session.execute(
-                    session.query(Activity).filter_by(activity_id=activity_id)
-                )
+                stmt = select(Activity).where(Activity.activity_id == activity_id)
+                result = await session.execute(stmt)
                 return result.scalar_one_or_none()
             except Exception as e:
                 logger.error("Error fetching activity: %s", e, exc_info=True)
@@ -83,18 +83,18 @@ class StravaActivitiesDao:
 
         :return: True if the update was successful, False otherwise.
         """
-        logger.info("Updating activity with ID %s", activity_id)
+        logger.debug("Updating activity with ID %s", activity_id)
         async with self.db_service.get_async_session() as session:
             try:
-                stmt = (
-                    session.query(Activity)
-                    .filter_by(activity_id=activity_id)
-                    .update()
-                    .values(**kwargs)
-                )
-                await session.execute(stmt)
-                await session.commit()
-                return True
+                activity = await self.get_activity(activity_id=activity_id)
+
+                if activity:
+                    for key, value in kwargs.items():
+                        setattr(activity, key, value)
+
+                    await session.commit()
+                    return True
+                return False
             except Exception as e:
                 await session.rollback()
                 logger.error("Error updating activity: %s", e, exc_info=True)
@@ -108,15 +108,18 @@ class StravaActivitiesDao:
 
         :return: True if the deletion was successful, False otherwise.
         """
-        logger.info("Deleting activity with ID %s", activity_id)
+        logger.debug("Deleting activity with ID %s", activity_id)
         async with self.db_service.get_async_session() as session:
             try:
-                stmt = (
-                    session.query(Activity).filter_by(activity_id=activity_id).delete()
-                )
-                await session.execute(stmt)
-                await session.commit()
-                return True
+                stmt = select(Activity).where(Activity.activity_id == activity_id)
+                result = await session.execute(stmt)
+                activity = result.scalar_one_or_none()
+
+                if activity:
+                    await session.delete(activity)
+                    await session.commit()
+                    return True
+                return False
             except Exception as e:
                 await session.rollback()
                 logger.error("Error deleting activity: %s", e, exc_info=True)
@@ -139,7 +142,7 @@ class StravaActivitiesDao:
 
         :return: A dictionary containing basic recap stats grouped by athlete.
         """
-        logger.info("Fetching basic stats for all authenticated athletes")
+        logger.debug("Fetching basic stats for all authenticated athletes")
         async with self.db_service.get_async_session() as session:
             try:
                 # TODO: Figure out how to work with the time-based metrics
@@ -154,11 +157,12 @@ class StravaActivitiesDao:
 
         :return: A list of Activity objects if successful, None otherwise.
         """
-        logger.info("Acquiring a list of detailed activities")
+        logger.debug("Acquiring a list of detailed activities")
         async with self.db_service.get_async_session() as session:
             try:
-                query_result = await session.execute(session.query(Activity))
-                return query_result.all()
+                stmt = select(Activity)
+                query_result = await session.execute(stmt)
+                return query_result.scalars().all()
             except Exception as e:
                 logger.error(f"Error acquiring the list of detailed activities: {e}")
                 return None

@@ -8,7 +8,7 @@ from tenacity import (
 from json import loads
 from openai.types.chat import ChatCompletion
 
-from prompts.tag import tag_prompt
+from prompts.tag import tag_prompt, tag_prompt_concise
 from models.athlete import Activity, Athlete
 from models.chat import (
     ChatResponse,
@@ -111,14 +111,21 @@ class TAGRetriever:
         if self.error_msg:
             messages.append({"role": RoleTypes.DEVELOPER, "content": self.error_msg})
 
-        # NOTE - Consideration: Only append the full TAG prompt if it's not already in the messages
+        # Use full prompt for the start of the conversation, and the concise equivalent for the rest.
         messages.append(
             {
                 "role": RoleTypes.DEVELOPER,
-                "content": tag_prompt.format(
-                    schema_description=schema_desc,
-                    conversation=messages,
-                    user_question=user_question,
+                "content": (
+                    tag_prompt.format(
+                        schema_description=schema_desc,
+                        conversation=messages,
+                        user_question=user_question,
+                    )
+                    # if len(messages) < 2
+                    # else tag_prompt_concise.format(
+                    #     conversation=messages,
+                    #     user_question=user_question,
+                    # )
                 ),
             }
         )

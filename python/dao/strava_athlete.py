@@ -32,7 +32,7 @@ class StravaAthleteDao:
         Returns:
             The athlete's ID after the upsert operation.
         """
-        logger.info("Upserting athlete with ID %s", athlete_id)
+        logger.debug("Upserting athlete with ID %s", athlete_id)
         async with self.db_service.get_async_session() as session:
             try:
                 stmt = (
@@ -74,7 +74,7 @@ class StravaAthleteDao:
         Returns:
             An Athlete object (or None if not found).
         """
-        logger.info("Fetching athlete with ID %s", athlete_id)
+        logger.debug("Fetching athlete with ID %s", athlete_id)
         async with self.db_service.get_async_session() as session:
             try:
                 stmt = select(Athlete).where(Athlete.athlete_id == athlete_id)
@@ -97,7 +97,7 @@ class StravaAthleteDao:
         Returns:
             An int representing the athlete's ID (or None if not found).
         """
-        logger.info("Fetching athlete ID for '%s'", athlete_name)
+        logger.debug("Fetching athlete ID for '%s'", athlete_name)
         async with self.db_service.get_async_session() as session:
             try:
                 stmt = select(Athlete).where(Athlete.athlete_name == athlete_name)
@@ -121,7 +121,7 @@ class StravaAthleteDao:
         Returns:
             A list of Athlete objects.
         """
-        logger.info("Fetching all athletes")
+        logger.debug("Fetching all athletes")
         async with self.db_service.get_async_session() as session:
             try:
                 stmt = select(Athlete)
@@ -130,7 +130,7 @@ class StravaAthleteDao:
             except Exception as e:
                 logger.error("Error getting athletes: %s", e, exc_info=True)
                 raise
-
+    
     async def update_athlete(
         self,
         athlete_id: int,
@@ -150,7 +150,7 @@ class StravaAthleteDao:
         Returns:
             A boolean indicating whether or not the athlete's details were updated.
         """
-        logger.info("Updating athlete with ID %s", athlete_id)
+        logger.debug("Updating athlete with ID %s", athlete_id)
         async with self.db_service.get_async_session() as session:
             try:
                 stmt = select(Athlete).where(Athlete.athlete_id == athlete_id)
@@ -186,7 +186,7 @@ class StravaAthleteDao:
         Returns:
             A boolean indicating whether or not the athlete was deleted.
         """
-        logger.info("Deleting athlete with ID %s", athlete_id)
+        logger.debug("Deleting athlete with ID %s", athlete_id)
         async with self.db_service.get_async_session() as session:
             try:
                 stmt = select(Athlete).where(Athlete.athlete_id == athlete_id)
