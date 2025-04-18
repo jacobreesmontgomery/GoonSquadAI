@@ -52,8 +52,6 @@ class ActivitiesAPI:
 
         return response
 
-    # TODO: Manually hit this via Insomnia to get data from the start of 2024 onward.
-    # NOTE: Currently covered from 02/01/2023 through 4/16/2025. (1.5 years!)
     @activities_router.post(
         "/activities/update-database-activities",
         summary="Updates the database with the latest activities.",

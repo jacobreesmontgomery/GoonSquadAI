@@ -48,3 +48,40 @@ Follow these steps to get everything up and running:
 3. The NodeJS server receives the request and routes it to the BE FastAPI server.
 4. The BE FastAPI endpoint receives the request and adds the newly authenticated user to the `strava_api.athletes` DB table.
 5. Going forward, the new user's activities will be acquired on a scheduled frequency, going into the `strava_api.activities` DB table.
+
+## Data Acquisition
+
+Data has been acquired from 1/1/23 onward. Currently, the following data is captured for each activity:
+
+| Field | Description |
+| ----- | ----------- |
+| activity_id | Unique identifier for the activity |
+| athlete_id | Athlete associated with the activity |
+| name | Name of the activity |
+| moving_time | Time spent moving (HH:MM:SS) |
+| moving_time_s | Moving time in seconds |
+| distance_mi | Distance covered in miles |
+| pace_min_mi | Average pace in minutes per mile |
+| avg_speed_ft_s | Average speed in feet per second |
+| full_datetime | Full timestamp of the activity |
+| time | Time of day when the activity took place |
+| week_day | Day of the week (MON-SUN) |
+| month | Month of the year (1-12) |
+| day | Day of the month (1-31) |
+| year | Year of the activity |
+| spm_avg | Average steps per minute |
+| hr_avg | Average heart rate during the activity |
+| wkt_type | Run type classification (0=default, 1=race, 2=long run, 3=workout) |
+| description | Additional notes or description of the activity |
+| total_elev_gain_ft | Total elevation gain in feet |
+| manual | Whether the activity was manually logged |
+| max_speed_ft_s | Maximum speed in feet per second |
+| calories | Calories burned during the activity |
+| achievement_count | Number of achievements earned |
+| kudos_count | Number of kudos received |
+| comment_count | Number of comments received |
+| athlete_count | Number of athletes involved in the activity |
+| rpe | Rate of perceived exertion (1-10) |
+| rating | User rating of the activity (1-10) |
+| avg_power | Average power output in watts |
+| sleep_rating | Sleep rating on the day of activity (1-10) |
