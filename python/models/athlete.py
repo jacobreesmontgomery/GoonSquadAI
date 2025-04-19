@@ -118,6 +118,8 @@ class Activity(Base):
     rating = Column(Integer, nullable=True)  # 1-10
     avg_power = Column(Integer, nullable=True)  # e.g., 305
     sleep_rating = Column(Integer, nullable=True)  # 1-10
+    suffer_score = Column(Integer, nullable=True)  # Strava's relative effort/suffer score
+    perceived_exertion = Column(Integer, nullable=True)  # User's perceived exertion (1-10)
 
     def __repr__(self):
         return (
@@ -161,6 +163,8 @@ class Activity(Base):
             "rating",
             "avg_power",
             "sleep_rating",
+            "suffer_score",
+            "perceived_exertion",
         ]
 
     def convert_to_schema_description(self):
@@ -204,6 +208,8 @@ class Activity(Base):
         - rating (INTEGER, NULL): User rating of the activity (1-10).
         - avg_power (INTEGER, NULL): Average power output in watts.
         - sleep_rating (INTEGER, NULL): Sleep rating on the day of activity (1-10).
+        - suffer_score (INTEGER, NULL): Strava's relative effort/suffer score.
+        - perceived_exertion (INTEGER, NULL): User's perceived exertion (1-10).
         
         Notes: 
         - Primary Key: activity_id

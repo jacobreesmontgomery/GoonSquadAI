@@ -85,3 +85,14 @@ Data has been acquired from 1/1/23 onward. Currently, the following data is capt
 | rating | User rating of the activity (1-10) |
 | avg_power | Average power output in watts |
 | sleep_rating | Sleep rating on the day of activity (1-10) |
+
+## DB Migrations
+
+Follow these steps to run a migration via Alembic:
+1. Make the desired DB changes within the [./python/dao](./python/dao/) folder.
+2. Run `alembic revision --autogenerate -m "Revision message"`.
+3. Validate the generated migration file(s) within the [versions](./migrations/versions/) directory.
+4. Run `alembic upgrade head` to execute the DB changes via the [configured](./migrations/env.py) DB engine.
+5. Validate the changes in the target DB.
+
+**NOTE**: If necessary, you can downgrade the most recent upgrade by running `alembic downgrade -1`.
