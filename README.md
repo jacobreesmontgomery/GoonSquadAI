@@ -19,11 +19,11 @@ This page will hold specific data to the athlete selected on the main page. A us
 
 ### Basic Stats
 
-This page will hold basic week recap stats, pulled from the `strava_api.activities` DB table.
+This page will hold basic week recap stats, pulled from the `strava.activities` DB table.
 
 ### Database
 
-This page will have a filterable table to hold all runs stored in the `strava_api.activities` DB table. The user will be able to filter by all columns.
+This page will have a filterable table to hold all runs stored in the `strava.activities` DB table. The user will be able to filter by all columns.
 
 ### Chat
 
@@ -46,8 +46,8 @@ Follow these steps to get everything up and running:
 1. A user authenticates with the app by clicking the 'Authenticate' button on the FE.
 2. The request is routed from the FE to the BE NodeJS server, `server.js`.
 3. The NodeJS server receives the request and routes it to the BE FastAPI server.
-4. The BE FastAPI endpoint receives the request and adds the newly authenticated user to the `strava_api.athletes` DB table.
-5. Going forward, the new user's activities will be acquired on a scheduled frequency, going into the `strava_api.activities` DB table.
+4. The BE FastAPI endpoint receives the request and adds the newly authenticated user to the `strava.athletes` DB table.
+5. Going forward, the new user's activities will be acquired on a scheduled frequency, going into the `strava.activities` DB table.
 
 ## Data Acquisition
 

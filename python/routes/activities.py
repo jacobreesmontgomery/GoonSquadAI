@@ -37,7 +37,7 @@ class ActivitiesAPI:
     @activities_router.get(
         "/activities/detailed-stats",
         summary="Acquires a list of all activities from the database.",
-        description="Acquires a a list of all activities from the strava_api.activities database table.",
+        description="Acquires a a list of all activities from the strava.activities database table.",
         status_code=200,
         response_model=APIResponsePayload[DetailedActivities, Empty],
     )

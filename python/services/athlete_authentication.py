@@ -54,7 +54,7 @@ class NewAthletesAPI:
             athlete_name = f"{athlete_data.firstname} {athlete_data.lastname}"
             athlete_email = athlete_data.email
 
-            # Upsert the athlete's data to the strava_api.athletes DB table
+            # Upsert the athlete's data to the strava.athletes DB table
             rows_affected = await athlete_db_engine.upsert_athlete(
                 athlete_id=athlete_id,
                 athlete_name=athlete_name,
