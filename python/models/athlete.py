@@ -220,22 +220,6 @@ class Activity(Base):
         Notes: 
         - Primary Key: activity_id
         - Foreign Key: athlete_id references strava_api.athletes.athlete_id
-        
-        *** SQL QUERY BEST PRACTICES ***
-        
-        Time Metrics:
-        - DO NOT use AVG() directly on TIME type columns like moving_time or pace_min_mi
-        - ALWAYS use the numerical equivalents (e.g., moving_time_s) for calculations involving duration
-
-        Pace Calculations:
-        - DO NOT use AVG() on pace_min_mi directly as it's a TIME type
-        - For pace calculations, use avg_speed_ft_s or calculate from distance_mi and moving_time_s
-
-        Date Handling:
-        - For date-based analytics, use full_datetime, or appropriate combinations of year, month, day
-        - PostgreSQL Requirement: When using expressions like date_trunc() in SELECT, you must include the exact same expression in GROUP BY, not just the alias
-        
-        Run Types:
         - The 'wkt_type' column values: 0 = default, 1 = race, 2 = long run, 3 = workout
         - If a user asks for a specific type of run, filter by wkt_type
         """

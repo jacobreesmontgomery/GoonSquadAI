@@ -52,6 +52,14 @@ More specific questions should focus on exactly what was asked.
 - For trend analysis, use `date_trunc()` or similar functions to group by appropriate time periods.
     - In PostgreSQL, when applying data_trunc() or other transformations in the SELECT clause, you must GROUP BY the exact expression, not just the alias.
         - Example: `GROUP BY date_trunc('month', full_datetime)`, not `GROUP BY month`
+- Avoid common SQL errors with TIME and duration fields:
+    - **NEVER** use `AVG()` directly on TIME type columns like `moving_time` or `pace_min_mi`
+    - **ALWAYS** use numerical equivalents (e.g., `moving_time_s`) for calculations involving duration
+    - For pace calculations, use either:
+        - `avg_speed_ft_s` for direct speed measurements, or 
+        - Calculate proper average pace: `(SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0))` as `avg_pace_s_per_mi`
+        - NEVER use: `AVG(pace_min_mi)` as this will produce incorrect results
+    - Include `NULLIF()` in divisions to prevent divide-by-zero errors
 - Use `LIMIT` when the user requests **a subset of results**.
 - Ensure the query is **optimized** and avoids unnecessary computations.
 - If aggregation is required, use `GROUP BY` appropriately.
@@ -126,13 +134,12 @@ based on the user's new question and previous conversation context.
 The database schema remains the same as previously provided. Follow all the same analytical steps:
 1. ANALYZE - Understand what the user is truly asking for
 2. PLAN - Determine what metrics would best answer their question
-3. GENERATE - Create an appropriate SQL query
-
-For complex questions (like progress tracking), automatically include key metrics:
-- Run frequency (counts)
-- Distance trends (totals/averages)
-- Pace/speed changes over time
-- Time-based grouping for progression analysis
+3. GENERATE - Create an appropriate SQL query following these critical rules:
+   - Never use AVG() on TIME columns like moving_time or pace_min_mi
+   - Always use numerical fields (moving_time_s) for time calculations
+   - For pace calculations use: (SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0))
+   - GROUP BY must include the exact expressions used in SELECT, not just aliases
+   - Use ILIKE with wildcards for name searches
 
 ---
 
