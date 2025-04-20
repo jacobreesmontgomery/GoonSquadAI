@@ -172,7 +172,9 @@ class ActivityParser:
                 "rating": run_rating,
                 "avg_power": avg_power,
                 "sleep_rating": sleep_rating,
-            }  # add more fields as needed
+                "suffer_score": activity.suffer_score,
+                "perceived_exertion": activity.perceived_exertion,
+            }  # NOTE: Add more fields as needed.
             activities_list.append(activity_dict)
         logger.debug(
             f"\nEND of convert_activities_to_list_of_dicts_postgres() w/ return(s)...\n\tactivities_list: {activities_list}\n"
@@ -256,6 +258,7 @@ class ActivityParser:
         start_date: str | None = None,
         end_date: str | None = None,
         limit: int | None = None,
+        bypass_db_check: bool = False,
     ) -> int:
         """
         Retrieve all activities for a specific athlete from Strava API,
@@ -266,6 +269,7 @@ class ActivityParser:
         :param start_date: Limit results to activities after this timestamp.
         :param end_date: Limit results to activities before this timestamp.
         :param limit: Limit the number of activities returned.
+        :param bypass_db_check: If True, bypass the database check for existing activities.
 
         :return: The number of activities upserted into the database.
         """
@@ -287,9 +291,10 @@ class ActivityParser:
                 start_date=start_date,
                 end_date=end_date,
                 limit=limit,
+                bypass_db_check=bypass_db_check,
             )
         else:
-            activities = await strava_client.get_activities_this_week()
+            activities = await strava_client.get_activities_this_week(bypass_db_check=bypass_db_check)
 
         if not activities:
             logger.debug(f"No activities were found for athlete {athlete_id}.")

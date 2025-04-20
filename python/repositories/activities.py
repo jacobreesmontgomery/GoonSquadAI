@@ -59,9 +59,18 @@ class ActivitiesRepository:
         end_date: str | None = None,
         limit: int | None = None,
         athlete_ids: list[int] | None = None,
+        bypass_db_check: bool = False,
     ) -> APIResponsePayload[AllUpdatedActivities, Empty]:
         """
         Updates the database with the latest activities asynchronously for each athlete.
+
+        :param start_date: The start date for fetching activities.
+        :param end_date: The end date for fetching activities.
+        :param limit: The maximum number of activities to fetch.
+        :param athlete_ids: A list of athlete IDs to process. If None, all authenticated athletes will be processed.
+        :param bypass_db_check: If True, bypasses the database check for existing activities.
+
+        :return: An APIResponsePayload containing the updated activities.
         """
 
         logger.info("Updating the database with the latest activities asynchronously.")
@@ -98,6 +107,7 @@ class ActivitiesRepository:
                         start_date=start_date,
                         end_date=end_date,
                         limit=limit,
+                        bypass_db_check=bypass_db_check,
                     )
                 return UpdatedAthleteActivities(
                     athlete_id=user.athlete_id, num_updated_activities=num_upserts

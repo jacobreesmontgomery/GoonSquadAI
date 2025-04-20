@@ -61,6 +61,8 @@ class Athlete(Base):
 
         Notes:
         - Primary Key: athlete_id
+        - One athlete can have many activities (one-to-many relationship).
+        - Never disclose the refresh_token or email in any context.
         """
 
         return schema_description.strip()
@@ -118,8 +120,12 @@ class Activity(Base):
     rating = Column(Integer, nullable=True)  # 1-10
     avg_power = Column(Integer, nullable=True)  # e.g., 305
     sleep_rating = Column(Integer, nullable=True)  # 1-10
-    suffer_score = Column(Integer, nullable=True)  # Strava's relative effort/suffer score
-    perceived_exertion = Column(Integer, nullable=True)  # User's perceived exertion (1-10)
+    suffer_score = Column(
+        Integer, nullable=True
+    )  # Strava's relative effort/suffer score
+    perceived_exertion = Column(
+        Integer, nullable=True
+    )  # User's perceived exertion (1-10)
 
     def __repr__(self):
         return (
@@ -181,14 +187,14 @@ class Activity(Base):
         - activity_id (BIGINT, PK): Unique identifier for the activity.
         - athlete_id (BIGINT, FK -> strava_api.athletes.athlete_id, NOT NULL): Athlete associated with the activity.
         - name (STRING, NOT NULL): Name of the activity.
-        - moving_time (TIME, NOT NULL): Time spent moving (HH:MM:SS).
-        - moving_time_s (INTEGER, NOT NULL): Moving time in seconds.
+        - moving_time (TIME, NOT NULL): Time spent moving in HH:MM:SS format.
+        - moving_time_s (INTEGER, NOT NULL): Moving time in seconds (use this for numerical calculations).
         - distance_mi (FLOAT, NOT NULL): Distance covered in miles.
-        - pace_min_mi (TIME, NULL): Average pace in minutes per mile.
+        - pace_min_mi (TIME, NULL): Average pace in minutes per mile (MM:SS format). For numerical calculations, use avg_speed_ft_s instead.
         - avg_speed_ft_s (FLOAT(2), NOT NULL): Average speed in feet per second.
-        - full_datetime (DATETIME, NULL): Full timestamp of the activity.
-        - time (TIME, NOT NULL): Time of day when the activity took place.
-        - week_day (STRING, NOT NULL): Day of the week (e.g., MON-SUN).
+        - full_datetime (DATETIME, NULL): Full timestamp of the activity. Use this for date-based calculations.
+        - time (TIME, NOT NULL): Time of day when the activity took place (HH:MM:SS). For numerical time analysis, convert to seconds or appropriate numerical format.
+        - week_day (STRING, NOT NULL): Day of the week (e.g., MON-SUN). For numerical calculations, convert to numerical day (1-7).
         - month (INTEGER, NOT NULL): Month of the year (1-12).
         - day (INTEGER, NOT NULL): Day of the month (1-31).
         - year (INTEGER, NOT NULL): Year of the activity (e.g., 2024).
@@ -214,8 +220,24 @@ class Activity(Base):
         Notes: 
         - Primary Key: activity_id
         - Foreign Key: athlete_id references strava_api.athletes.athlete_id
-        - The 'wkt_type' column, regardless of the value, represents a run of some form.
-            - If a user asks for a specific type of run, consider filtering by this column in the SQL generation. Otherwise, ignore it.
+        
+        *** SQL QUERY BEST PRACTICES ***
+        
+        Time Metrics:
+        - DO NOT use AVG() directly on TIME type columns like moving_time or pace_min_mi
+        - ALWAYS use the numerical equivalents (e.g., moving_time_s) for calculations involving duration
+
+        Pace Calculations:
+        - DO NOT use AVG() on pace_min_mi directly as it's a TIME type
+        - For pace calculations, use avg_speed_ft_s or calculate from distance_mi and moving_time_s
+
+        Date Handling:
+        - For date-based analytics, use full_datetime, or appropriate combinations of year, month, day
+        - PostgreSQL Requirement: When using expressions like date_trunc() in SELECT, you must include the exact same expression in GROUP BY, not just the alias
+        
+        Run Types:
+        - The 'wkt_type' column values: 0 = default, 1 = race, 2 = long run, 3 = workout
+        - If a user asks for a specific type of run, filter by wkt_type
         """
 
         return schema_description.strip()

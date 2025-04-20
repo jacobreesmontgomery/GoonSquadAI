@@ -12,7 +12,7 @@ from tenacity import (
     RetryError,
 )
 from os import getenv
-from asyncio import to_thread
+from asyncio import to_thread, gather, Semaphore
 
 from utils.simple_logger import SimpleLogger
 
@@ -171,11 +171,18 @@ class StravaAPI:
             "description": "description",
             "workout_type": "wkt_type",
         },
+        bypass_db_check: bool = False,
+        max_concurrent_requests: int = 10,
     ) -> list[Activity]:
         """
         Gets the detailed activities of runs that are new or updated for specific fields.
+        Uses concurrent API calls with a limit to prevent rate limiting issues.
 
         :param activities: list of Activity objects
+        :param activity_types: list of activity types to include
+        :param fields_to_check: dictionary mapping API field names to DB field names
+        :param bypass_db_check: whether to bypass DB checks for existing activities
+        :param max_concurrent_requests: maximum number of concurrent API requests
         :return: a list of detailed Activity objects
         """
 
@@ -187,50 +194,86 @@ class StravaAPI:
             f"Filtered down to {len(activities)} out of {len(activities)} total activities."
         )
 
-        detailed_activities: list[Activity] = []
-        for activity in activities:
-            db_activity = await self.strava_activities_dao.get_activity(
-                activity_id=activity.id
-            )
+        # List to store activities needing detailed info
+        activities_to_fetch: list[Activity] = []
 
-            # If present, compare the incoming activity against the corresponding DB entry for specific fields
-            if db_activity:
-                fields_that_differ: list[str] = []
-                for api_field, db_field in fields_to_check.items():
-                    if getattr(activity, api_field) != getattr(db_activity, db_field):
-                        fields_that_differ.append(api_field)
-
-                if not fields_that_differ:
-                    logger.debug(
-                        f"Activity [{activity.id}] has not been updated in the database for fields {list(fields_to_check.keys())}. Skipping the update."
-                    )
-                    continue  # Skip the update if no fields have changed
-                else:
-                    logger.debug(
-                        f"Activity [{activity.id}] has been updated in the database for fields {fields_that_differ}. Updating the activity in the database."
-                    )
-
-            # Fetch the new/updated detailed activity
-            detailed_activity = await self.fetch_detailed_activity(
-                activity_id=activity.id
-            )
-            if not detailed_activity:
-                logger.error(
-                    f"No detailed activity was acquired for activity [{activity.id}]. "
-                    f"This may be due to a rate limit or retry error. "
-                    f"Returning the current list of {len(detailed_activities)} detailed activities."
+        # First pass: check database to determine which activities need updates
+        if not bypass_db_check:
+            for activity in activities:
+                db_activity = await self.strava_activities_dao.get_activity(
+                    activity_id=activity.id
                 )
-                return detailed_activities  # Return what we've got (we've hit the rate limit)
 
-            detailed_activities.append(detailed_activity)
+                # If present, compare the incoming activity against the corresponding DB entry
+                if db_activity:
+                    fields_that_differ = []
+                    for api_field, db_field in fields_to_check.items():
+                        if getattr(activity, api_field) != getattr(
+                            db_activity, db_field
+                        ):
+                            fields_that_differ.append(api_field)
 
-        logger.info(f"Returning {len(detailed_activities)} detailed activities.")
+                    if not fields_that_differ:
+                        logger.debug(
+                            f"Activity [{activity.id}] has not been updated in the database for fields {list(fields_to_check.keys())}. Skipping the update."
+                        )
+                        continue  # Skip the update if no fields have changed
+                    else:
+                        logger.debug(
+                            f"Activity [{activity.id}] has been updated in the database for fields {fields_that_differ}. Updating the activity in the database."
+                        )
+
+                activities_to_fetch.append(activity)
+        else:
+            # If bypassing DB check, fetch all activities
+            activities_to_fetch = activities
+
+        logger.info(
+            f"Fetching detailed data for {len(activities_to_fetch)} activities with concurrency limit of {max_concurrent_requests}"
+        )
+
+        # Create a semaphore to limit concurrent requests
+        semaphore = Semaphore(max_concurrent_requests)
+
+        # Helper function to fetch a single activity with the semaphore
+        async def fetch_with_semaphore(activity_id):
+            async with semaphore:
+                return await self.fetch_detailed_activity(activity_id=activity_id)
+
+        # Create tasks for all activities to fetch
+        fetch_tasks = [
+            fetch_with_semaphore(activity.id) for activity in activities_to_fetch
+        ]
+
+        # Execute all tasks concurrently and wait for results
+        detailed_results = await gather(*fetch_tasks, return_exceptions=True)
+
+        # Process results, filtering out exceptions and None values
+        detailed_activities: list[Activity] = []
+        for i, result in enumerate(detailed_results):
+            if isinstance(result, Exception):
+                logger.error(
+                    f"Error fetching activity [{activities_to_fetch[i].id}]: {result}"
+                )
+            elif result is None:
+                logger.error(
+                    f"No detailed activity was acquired for activity [{activities_to_fetch[i].id}]."
+                )
+            else:
+                detailed_activities.append(result)
+
+        logger.info(
+            f"Successfully retrieved {len(detailed_activities)} detailed activities out of {len(activities_to_fetch)} requested."
+        )
         return detailed_activities
 
-    async def get_activities_this_week(self) -> list[Activity]:
+    async def get_activities_this_week(
+        self, bypass_db_check: bool = False
+    ) -> list[Activity]:
         """
         Gets the athlete's activities for the current week.
 
+        :param bypass_db_check: Whether to bypass the database check for existing activities (optional)
         :return: A list of the current week's activities
         """
         # Calculate the start and end of the current week in UTC
@@ -251,7 +294,9 @@ class StravaAPI:
             return []  # No activities acquired, return an empty list
 
         # Get the detailed activities from the basic list above
-        detailed_activities = await self.get_detailed_activities(activities=activities)
+        detailed_activities = await self.get_detailed_activities(
+            activities=activities, bypass_db_check=bypass_db_check
+        )
         return detailed_activities
 
     async def get_activities(
@@ -260,6 +305,7 @@ class StravaAPI:
         start_date: str | None = None,
         end_date: str | None = None,
         limit: int | None = None,
+        bypass_db_check: bool = False,
     ) -> list[Activity]:
         """
         Gets the athlete's activities for a default, or specified, timeframe.
@@ -268,6 +314,7 @@ class StravaAPI:
         :param start_date: The start date, as an epoch timestamp, of the timeframe for activities (optional)
         :param end_date: The end date, as an epoch timestamp, of the timeframe for activities (optional)
         :param limit: The maximum number of activities to retrieve (optional)
+        :param bypass_db_check: Whether to bypass the database check for existing activities (optional)
         :return: A list of activities for the specified athlete and timeframe.
         """
         try:
@@ -281,7 +328,7 @@ class StravaAPI:
                 return []  # No activities acquired, return an empty list
 
             detailed_activities = await self.get_detailed_activities(
-                activities=activities
+                activities=activities, bypass_db_check=bypass_db_check
             )
             return detailed_activities
         except Exception as e:

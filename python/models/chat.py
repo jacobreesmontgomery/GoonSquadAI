@@ -73,6 +73,6 @@ class GeneratedQueryOutput(BaseModel):
     query: Annotated[str, "The generated SQL query."]
     confidence: Annotated[str, "The confidence level of the query (LOW, MEDIUM, HIGH)."]
     follow_ups: Annotated[
-        str,
+        str | None,
         "Follow-up questions to ask the user--in the case of a LOW confidence level--to gain clarity on the request.",
     ] = None

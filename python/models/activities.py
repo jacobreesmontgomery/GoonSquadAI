@@ -40,6 +40,7 @@ class UpdateDatabaseActivitiesRequest(BaseModel):
     end_date: Optional[str] = None
     limit: Optional[int] = None
     athlete_ids: Optional[list[int]] = None
+    bypass_db_check: bool = False
 
     @validator("athlete_ids")
     def validate_athlete_ids(cls, v):

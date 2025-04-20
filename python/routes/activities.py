@@ -52,6 +52,8 @@ class ActivitiesAPI:
 
         return response
 
+    # TODO - JACOB: Run through the manual data injection process again so we get suffer score and perceived exertion...
+    # Currently back to the start of 2024.
     @activities_router.post(
         "/activities/update-database-activities",
         summary="Updates the database with the latest activities.",
@@ -71,6 +73,7 @@ class ActivitiesAPI:
             end_date=payload.data.end_date,
             limit=payload.data.limit,
             athlete_ids=payload.data.athlete_ids,
+            bypass_db_check=payload.data.bypass_db_check,
         )
 
         return response
