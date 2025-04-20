@@ -3,7 +3,6 @@ from sqlalchemy import (
     Integer,
     String,
     Float,
-    Time,
     DateTime,
     Boolean,
     Text,
@@ -22,7 +21,7 @@ class Athlete(Base):
     """
 
     __tablename__ = "athletes"
-    __table_args__ = {"schema": "strava_api"}  # Schema defined as `strava_api`
+    __table_args__ = {"schema": "strava"}  # Schema defined as `strava`
 
     # Primary key
     athlete_id = mapped_column(BigInteger, primary_key=True, autoincrement=False)
@@ -49,7 +48,7 @@ class Athlete(Base):
         """
 
         schema_description = f"""
-        Table: strava_api.athletes
+        Table: strava.athletes
         Description: This table stores information about Strava athletes, including their identifiers, 
         authentication tokens, and contact details.
 
@@ -74,30 +73,23 @@ class Activity(Base):
     """
 
     __tablename__ = "activities"
-    __table_args__ = {"schema": "strava_api"}  # To use the `strava_api` schema
+    __table_args__ = {"schema": "strava"}  # To use the `strava` schema
 
     # Primary and foreign keys
     activity_id = mapped_column(BigInteger, primary_key=True, autoincrement=False)
     athlete_id = mapped_column(
-        BigInteger, ForeignKey("strava_api.athletes.athlete_id"), nullable=False
+        BigInteger, ForeignKey("strava.athletes.athlete_id"), nullable=False
     )
     athlete: Mapped["Athlete"] = relationship("Athlete", back_populates="activities")
 
     # Activity metadata
     name = Column(String, nullable=False)
-    moving_time = Column(Time, nullable=False)  # HH:MM:SS
     moving_time_s = Column(Integer, nullable=False)  # Moving time in seconds
     distance_mi = Column(Float, nullable=False)
-    pace_min_mi = Column(Time, nullable=True)  # HH:MM:SS
     avg_speed_ft_s = Column(Float(precision=2), nullable=False)  # Average speed in ft/s
 
     # Date and time fields
     full_datetime = Column(DateTime, nullable=True)  # MM/DD/YY HH:MM:SS
-    time = Column(Time, nullable=False)  # HH:MM:SS
-    week_day = Column(String, nullable=False)  # MON-SUN
-    month = Column(Integer, nullable=False)  # 1-12
-    day = Column(Integer, nullable=False)  # 1-31
-    year = Column(Integer, nullable=False)  # e.g. 2024
 
     # Additional activity metrics
     spm_avg = Column(Float, nullable=True)
@@ -116,7 +108,6 @@ class Activity(Base):
     athlete_count = Column(Integer, nullable=True)
 
     # User ratings and performance
-    rpe = Column(Integer, nullable=True)  # 1-10
     rating = Column(Integer, nullable=True)  # 1-10
     avg_power = Column(Integer, nullable=True)  # e.g., 305
     sleep_rating = Column(Integer, nullable=True)  # 1-10
@@ -130,7 +121,7 @@ class Activity(Base):
     def __repr__(self):
         return (
             f"<Activity(activity_id={self.activity_id}, athlete={self.athlete}, "
-            f"distance_mi={self.distance_mi}, moving_time={self.moving_time})>"
+            f"distance_mi={self.distance_mi}, moving_time_s={self.moving_time_s})>"
         )
 
     def get_headers(self):
@@ -142,17 +133,10 @@ class Activity(Base):
             "activity_id",
             "athlete_id",
             "name",
-            "moving_time",
             "moving_time_s",
             "distance_mi",
-            "pace_min_mi",
             "avg_speed_ft_s",
             "full_datetime",
-            "time",
-            "week_day",
-            "month",
-            "day",
-            "year",
             "spm_avg",
             "hr_avg",
             "wkt_type",
@@ -165,7 +149,6 @@ class Activity(Base):
             "kudos_count",
             "comment_count",
             "athlete_count",
-            "rpe",
             "rating",
             "avg_power",
             "sleep_rating",
@@ -179,25 +162,18 @@ class Activity(Base):
         """
 
         schema_description = f"""
-        Table: strava_api.activities
+        Table: strava.activities
         Description: This table stores Strava run activities, including metadata about the activity, 
         performance metrics, and engagement details.
 
         Columns:
         - activity_id (BIGINT, PK): Unique identifier for the activity.
-        - athlete_id (BIGINT, FK -> strava_api.athletes.athlete_id, NOT NULL): Athlete associated with the activity.
+        - athlete_id (BIGINT, FK -> strava.athletes.athlete_id, NOT NULL): Athlete associated with the activity.
         - name (STRING, NOT NULL): Name of the activity.
-        - moving_time (TIME, NOT NULL): Time spent moving in HH:MM:SS format.
         - moving_time_s (INTEGER, NOT NULL): Moving time in seconds (use this for numerical calculations).
         - distance_mi (FLOAT, NOT NULL): Distance covered in miles.
-        - pace_min_mi (TIME, NULL): Average pace in minutes per mile (MM:SS format). For numerical calculations, use avg_speed_ft_s instead.
         - avg_speed_ft_s (FLOAT(2), NOT NULL): Average speed in feet per second.
         - full_datetime (DATETIME, NULL): Full timestamp of the activity. Use this for date-based calculations.
-        - time (TIME, NOT NULL): Time of day when the activity took place (HH:MM:SS). For numerical time analysis, convert to seconds or appropriate numerical format.
-        - week_day (STRING, NOT NULL): Day of the week (e.g., MON-SUN). For numerical calculations, convert to numerical day (1-7).
-        - month (INTEGER, NOT NULL): Month of the year (1-12).
-        - day (INTEGER, NOT NULL): Day of the month (1-31).
-        - year (INTEGER, NOT NULL): Year of the activity (e.g., 2024).
         - spm_avg (FLOAT, NULL): Average steps per minute.
         - hr_avg (FLOAT, NULL): Average heart rate during the activity.
         - wkt_type (INTEGER, NULL): The run type classification (0 = default, 1 = race, 2 = long run, 3 = workout).
@@ -219,9 +195,9 @@ class Activity(Base):
         
         Notes: 
         - Primary Key: activity_id
-        - Foreign Key: athlete_id references strava_api.athletes.athlete_id
+        - Foreign Key: athlete_id references strava.athletes.athlete_id
         - The 'wkt_type' column values: 0 = default, 1 = race, 2 = long run, 3 = workout
-        - If a user asks for a specific type of run, filter by wkt_type
+            - If a user asks for a specific type of run, filter by wkt_type
         """
 
         return schema_description.strip()
