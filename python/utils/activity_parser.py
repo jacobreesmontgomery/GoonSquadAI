@@ -102,16 +102,6 @@ class ActivityParser:
             rpe, run_rating, avg_power, sleep_rating = self.parse_description(
                 activity.description if activity.description else ""
             )
-            run_time, week_day, month, day, year = self.parse_start_date(
-                activity.start_date_local
-            )
-            str_formatted_time, time_obj = self.formatter.format_seconds(
-                activity.moving_time
-            )
-            str_formatted_moving_time, moving_time_obj = self.formatter.calculate_pace(
-                float(activity.moving_time.total_seconds()),
-                float(activity.distance * 0.000621371),
-            )
 
             # Convert timezone-aware datetime to naive for database
             utc_datetime = activity.start_date.astimezone(tz=timezone("UTC"))
@@ -129,21 +119,14 @@ class ActivityParser:
                 "activity_id": activity.id,
                 "athlete_id": activity.athlete.id,
                 "name": activity.name,
-                "moving_time": time_obj,
                 "moving_time_s": activity.moving_time.total_seconds(),
                 "distance_mi": round(
                     float(activity.distance) / 1609.34, 2
                 ),  # Converting meters to miles
-                "pace_min_mi": moving_time_obj,
                 "avg_speed_ft_s": round(
                     float(str(activity.average_speed).split()[0]) * 3.28084, 2
                 ),
                 "full_datetime": naive_datetime,
-                "time": run_time,
-                "week_day": week_day,
-                "month": month,
-                "day": day,
-                "year": year,
                 "spm_avg": (
                     round(activity.average_cadence * 2, 2)
                     if activity.average_cadence
@@ -168,12 +151,13 @@ class ActivityParser:
                 "kudos_count": activity.kudos_count,
                 "comment_count": activity.comment_count,
                 "athlete_count": activity.athlete_count,
-                "rpe": rpe,
                 "rating": run_rating,
                 "avg_power": avg_power,
                 "sleep_rating": sleep_rating,
                 "suffer_score": activity.suffer_score,
-                "perceived_exertion": activity.perceived_exertion,
+                "perceived_exertion": (
+                    activity.perceived_exertion if activity.perceived_exertion else rpe
+                ),
             }  # NOTE: Add more fields as needed.
             activities_list.append(activity_dict)
         logger.debug(
@@ -294,7 +278,9 @@ class ActivityParser:
                 bypass_db_check=bypass_db_check,
             )
         else:
-            activities = await strava_client.get_activities_this_week(bypass_db_check=bypass_db_check)
+            activities = await strava_client.get_activities_this_week(
+                bypass_db_check=bypass_db_check
+            )
 
         if not activities:
             logger.debug(f"No activities were found for athlete {athlete_id}.")
