@@ -219,6 +219,12 @@ class TAGRetriever(BaseRetriever):
             Your task is to **write a natural language answer** to the user.
             Do **NOT** generate another SQL query. Simply provide a clear, well-written summary response.
 
+            When presenting data, convert technical values to human-friendly formats:
+            - Convert pace in seconds per mile to MM:SS per mile format (e.g., 495 seconds → 8:15 min/mile)
+            - Format large values with appropriate commas and units (e.g., 26400 feet → 5.0 miles)
+            - Round decimal values to 2 places unless precision is critical
+            - Use clear labels for all metrics (e.g., "Average Pace" instead of "avg_pace_s_per_mi")
+
             Additionally, if there are multiple data records, display such with a Markdown-formatted table.
         """
 
