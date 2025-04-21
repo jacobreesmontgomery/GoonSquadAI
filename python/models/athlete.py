@@ -188,7 +188,7 @@ class Activity(Base):
         - athlete_count (INTEGER, NULL): Number of athletes involved in the activity.
         - rating (INTEGER, NULL): User rating of the activity (1-10).
         - avg_power (INTEGER, NULL): Average power output in watts.
-        - sleep_rating (INTEGER, NULL): Sleep rating on the day of activity (1-10).
+        - sleep_rating (INTEGER, NULL): How well the user slept the previous night (1-10). This does not correspond to number of hours slept.
         - suffer_score (INTEGER, NULL): Strava's relative effort/suffer score.
         - perceived_exertion (INTEGER, NULL): User's perceived exertion (1-10).
         

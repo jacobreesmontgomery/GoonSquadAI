@@ -57,6 +57,24 @@ More specific questions should focus on exactly what was asked.
 - If aggregation is required, use `GROUP BY` appropriately.
 - Use **aliases** for readability where necessary.
 - Format the query with **proper indentation** for clarity.
+- Do **NOT** query on non-existent columns or tables; make **NOTHING** up.
+
+### **Handling Data Anomalies:**
+- **Always prevent division by zero errors** by using `NULLIF()` for any divisor:
+  - Example: `moving_time_s / NULLIF(distance_mi, 0)` instead of `moving_time_s / distance_mi`
+  - For pace calculations: `(moving_time_s / NULLIF(distance_mi, 0))` 
+- When calculating averages or rates, consider adding **logical thresholds** to exclude outliers:
+  - For pace calculations, add `WHERE distance_mi > 0.1` to exclude extremely short activities
+  - For speed calculations, consider `WHERE avg_speed_ft_s > 1.0` to exclude unrealistic values
+- Use `CASE` statements to handle potential null values or outliers in calculations
+- When possible, perform data validation before calculations:
+  ```sql
+  SELECT 
+    CASE 
+      WHEN distance_mi > 0.1 THEN moving_time_s / distance_mi
+      ELSE NULL 
+    END AS pace_s_per_mi
+  ```
 
 ---
 

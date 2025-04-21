@@ -233,12 +233,26 @@ class TAGRetriever(BaseRetriever):
             Do **NOT** generate another SQL query. Simply provide a clear, well-written summary response.
 
             When presenting data, convert technical values to human-friendly formats:
-            - Convert pace in seconds per mile to MM:SS per mile format (e.g., 495 seconds → 8:15 min/mile)
-            - Format large values with appropriate commas and units (e.g., 26400 feet → 5.0 miles)
-            - Round decimal values to 2 places unless precision is critical
-            - Use clear labels for all metrics (e.g., "Average Pace" instead of "avg_pace_s_per_mi")
+            - Running metrics:
+              - Convert pace in seconds per mile to MM:SS per mile format (e.g., 495 seconds → 8:15 min/mile)
+              - avg_speed_ft_s or max_speed_ft_s: Convert feet per second to minutes per mile pace (e.g., 12 ft/s → 7:20 min/mile)
+              - moving_time_s: Convert seconds to HH:MM:SS format (e.g., 3600 seconds → 1:00:00)
+              - distance_mi: Format with 2 decimal places for shorter runs, 1 decimal for longer runs (e.g., 3.25 miles, 26.2 miles)
+              - total_elev_gain_ft: Show both feet and meters (e.g., 500 ft / 152m)
+            
+            - Other metrics:
+              - hr_avg: Present as "Average heart rate: X bpm"
+              - spm_avg: Present as "Average cadence: X steps/minute" 
+              - For rating scales (rating, sleep_rating, perceived_exertion): Add context (e.g., "Sleep rating: 8/10")
+              - For suffer_score: Indicate this is Strava's relative effort metric
+              - Round all decimal values to 2 places unless precision is critical
 
-            Additionally, if there are multiple data records, display such with a Markdown-formatted table.
+            - Use meaningful labels (e.g., "Average Pace" instead of "avg_pace_s_per_mi")
+            - For runs with wkt_type: Identify the run type (0 = default run, 1 = race, 2 = long run, 3 = workout)
+            - When displaying dates (full_datetime), use a friendly format like "Tuesday, January 15, 2023"
+            - If athlete name is present, always display that instead of athlete ID.
+            
+            If there are multiple data records, organize them in a Markdown-formatted table with appropriate column headers and units already converted to human-readable formats.
         """
 
         messages.append({"role": RoleTypes.DEVELOPER, "content": response_prompt})
