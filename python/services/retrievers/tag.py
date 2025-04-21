@@ -114,6 +114,10 @@ class TAGRetriever(BaseRetriever):
                     OR follow-up questions to ask the user.
         """
 
+        self.logger.debug(
+            f"\n\n================In execute_query with user question: {user_question}"
+        )
+
         if not schema_desc:
             schema_desc = self.schema_description
 
@@ -168,6 +172,8 @@ class TAGRetriever(BaseRetriever):
             )  # Hit the retry mechanism
 
         # Execute the query using async session
+        query_execution_exception = None
+        result = None
         async with self.db_service.get_async_session() as session:
             try:
                 self.logger.debug(
@@ -178,9 +184,16 @@ class TAGRetriever(BaseRetriever):
             except Exception as e:
                 self.error_msg = f"An error occurred while executing query [{query_to_execute}]: {e}\nPlease generate a query to resolve this issue.\n"
                 self.logger.error(self.error_msg)
-                raise QueryExecutionException(
+                # Store the exception to be raised outside the context manager
+                query_execution_exception = QueryExecutionException(
                     message=self.error_msg
-                )  # Hit the retry mechanism
+                )
+        # Re-raise the exception outside the context manager so it can be caught by the retry decorator
+        if query_execution_exception:
+            self.logger.error(
+                f"Raising query execution exception: {query_execution_exception}"
+            )
+            raise query_execution_exception
 
         return result, len(result), completion_id, query_to_execute
 
