@@ -51,24 +51,18 @@ Follow these steps to get everything up and running:
 
 ## Data Acquisition
 
-Data has been acquired from 1/1/23 onward. Currently, the following data is captured for each activity:
+Data has been acquired from 1/1/23 onward. Currently, as of 4/20/25, the following data is captured for each activity:
 
 | Field | Description |
 | ----- | ----------- |
 | activity_id | Unique identifier for the activity |
 | athlete_id | Athlete associated with the activity |
 | name | Name of the activity |
-| moving_time | Time spent moving (HH:MM:SS) |
 | moving_time_s | Moving time in seconds |
 | distance_mi | Distance covered in miles |
 | pace_min_mi | Average pace in minutes per mile |
 | avg_speed_ft_s | Average speed in feet per second |
 | full_datetime | Full timestamp of the activity |
-| time | Time of day when the activity took place |
-| week_day | Day of the week (MON-SUN) |
-| month | Month of the year (1-12) |
-| day | Day of the month (1-31) |
-| year | Year of the activity |
 | spm_avg | Average steps per minute |
 | hr_avg | Average heart rate during the activity |
 | wkt_type | Run type classification (0=default, 1=race, 2=long run, 3=workout) |
@@ -81,10 +75,11 @@ Data has been acquired from 1/1/23 onward. Currently, the following data is capt
 | kudos_count | Number of kudos received |
 | comment_count | Number of comments received |
 | athlete_count | Number of athletes involved in the activity |
-| rpe | Rate of perceived exertion (1-10) |
 | rating | User rating of the activity (1-10) |
 | avg_power | Average power output in watts |
 | sleep_rating | Sleep rating on the day of activity (1-10) |
+| suffer_score | Strava's relative effort/suffer score |
+| perceived_exertion | User's perceived exertion (1-10) |
 
 ## DB Migrations
 

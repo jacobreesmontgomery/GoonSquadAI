@@ -170,7 +170,7 @@ class Activity(Base):
         - activity_id (BIGINT, PK): Unique identifier for the activity.
         - athlete_id (BIGINT, FK -> strava.athletes.athlete_id, NOT NULL): Athlete associated with the activity.
         - name (STRING, NOT NULL): Name of the activity.
-        - moving_time_s (INTEGER, NOT NULL): Moving time in seconds (use this for numerical calculations).
+        - moving_time_s (INTEGER, NOT NULL): Moving time in seconds.
         - distance_mi (FLOAT, NOT NULL): Distance covered in miles.
         - avg_speed_ft_s (FLOAT(2), NOT NULL): Average speed in feet per second.
         - full_datetime (DATETIME, NULL): Full timestamp of the activity. Use this for date-based calculations.
@@ -186,7 +186,6 @@ class Activity(Base):
         - kudos_count (INTEGER, NULL): Number of kudos received.
         - comment_count (INTEGER, NULL): Number of comments received.
         - athlete_count (INTEGER, NULL): Number of athletes involved in the activity.
-        - rpe (INTEGER, NULL): Rate of perceived exertion (1-10).
         - rating (INTEGER, NULL): User rating of the activity (1-10).
         - avg_power (INTEGER, NULL): Average power output in watts.
         - sleep_rating (INTEGER, NULL): Sleep rating on the day of activity (1-10).
