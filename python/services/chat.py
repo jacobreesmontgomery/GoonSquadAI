@@ -57,16 +57,33 @@ class ChatService:
         :return: Boolean indicating if this is a training data question
         """
         try:
-            system_prompt = """You are a classifier that determines if a question is about running, workouts, 
-            training data, or similar topics. Respond with a JSON object with a single key 'is_training_related' 
-            and a boolean value. Examples of training-related topics include: running, workouts, distance, pace, 
-            miles, jogging, fitness activities, heart rate, Strava data, races, cardio, etc.
+            system_prompt = """
+            **INSTRUCTIONS**:
+            - You are a classifier that determines if a question is about running, workouts, 
+            training data, or similar athletic activities. Respond with a JSON object with a single key 'is_training_related' 
+            and a boolean value.
+
+            **CLASSIFICATION GUIDELINES**:
+            - Training-related topics include: running, workouts, distance, pace, 
+              miles, jogging, fitness activities, heart rate, Strava data, races, cardio, steps, elevation,
+              athletic performance metrics, and similar fitness-related statistics.
+              
+            - Questions about training progress, athletic history, workout comparisons,
+              activity summaries, or performance analysis should return true.
+              
+            - Questions about general topics unrelated to athletic activities (weather, news, 
+              general information) should return false.
+            
+            - References to any database columns such as moving_time_s, distance_mi, avg_speed_ft_s, 
+              hr_avg, etc., indicate a training-related query.
             
             **EXAMPLES**:
-            - "How many miles did I run last week?" -> {"is_training_related": true}
-            - "How has my running improved over the last month?" -> {"is_training_related": true}
-            - "How was my last week of training?" -> {"is_training_related": true}
-            - "What is the weather like today?" -> {"is_training_related": false}
+            - "How many miles did I run last week?" → {"is_training_related": true}
+            - "How has my running improved over the last month?" → {"is_training_related": true}
+            - "How was my last week of training?" → {"is_training_related": true}
+            - "Show me my fastest runs of 2024" → {"is_training_related": true}
+            - "What's the weather like today?" → {"is_training_related": false}
+            - "Can you help me with my homework?" → {"is_training_related": false}
             """
 
             # Include recent conversation history (last 3 messages) if available

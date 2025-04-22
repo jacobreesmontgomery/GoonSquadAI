@@ -234,25 +234,46 @@ class TAGRetriever(BaseRetriever):
 
             When presenting data, convert technical values to human-friendly formats:
             - Running metrics:
-              - Convert pace in seconds per mile to MM:SS per mile format (e.g., 495 seconds → 8:15 min/mile)
+              - avg_pace_sec_per_mi OR avg_pace_s_per_mile: Convert seconds to MM:SS per mile format (e.g., 571 → 9:31 min/mile)
               - avg_speed_ft_s or max_speed_ft_s: Convert feet per second to minutes per mile pace (e.g., 12 ft/s → 7:20 min/mile)
-              - moving_time_s: Convert seconds to HH:MM:SS format (e.g., 3600 seconds → 1:00:00)
-              - distance_mi: Format with 2 decimal places for shorter runs, 1 decimal for longer runs (e.g., 3.25 miles, 26.2 miles)
-              - total_elev_gain_ft: Show both feet and meters (e.g., 500 ft / 152m)
+              - moving_time_s or total_moving_time_s: Convert seconds to HH:MM:SS format (e.g., 3600 seconds → 1:00:00)
+              - distance_mi or total_distance_mi: Format with 2 decimal places for shorter runs, 1 decimal for longer runs (e.g., 3.25 miles, 26.2 miles)
+              - total_elev_gain_ft or elevation_gain or total_elevation_gain_ft: Show both feet and meters (e.g., 500 ft / 152m)
             
             - Other metrics:
-              - hr_avg: Present as "Average heart rate: X bpm"
+              - hr_avg or avg_heart_rate: Present as "Average heart rate: X bpm"
               - spm_avg: Present as "Average cadence: X steps/minute" 
               - For rating scales (rating, sleep_rating, perceived_exertion): Add context (e.g., "Sleep rating: 8/10")
               - For suffer_score: Indicate this is Strava's relative effort metric
               - Round all decimal values to 2 places unless precision is critical
 
-            - Use meaningful labels (e.g., "Average Pace" instead of "avg_pace_s_per_mi")
+            - Use meaningful labels (e.g., "Average Pace" instead of avg_pace_s_per_mi or avg_pace_sec_per_mi)
             - For runs with wkt_type: Identify the run type (0 = default run, 1 = race, 2 = long run, 3 = workout)
             - When displaying dates (full_datetime), use a friendly format like "Tuesday, January 15, 2023"
             - If athlete name is present, always display that instead of athlete ID.
             
+            For monthly summary data (e.g., monthly running statistics):
+            - If the data includes "month" or timestamp fields with month information:
+              - Display month names fully (e.g., "January" not "Jan" or "01")
+              - Convert run_count or total_runs or number of runs to simple integer format
+              - Moving time should be in HH:MM:SS format
+              - Total distance should be in miles with appropriate precision
+              - Average pace should ALWAYS be in MM:SS per mile format, not seconds or any other unit
+              - Elevation should always include both feet and meters
+
+            For data that contains avg_pace_sec_per_mi or similar pace fields:
+            1. Convert from seconds to MM:SS format (e.g., 571 seconds → 9:31 min/mile)
+            2. NEVER present pace as decimal minutes or raw seconds
+            3. Example calculation: 
+               - 571 seconds = 9 minutes and 31 seconds = 9:31 min/mile
+               - 495 seconds = 8 minutes and 15 seconds = 8:15 min/mile
+
             If there are multiple data records, organize them in a Markdown-formatted table with appropriate column headers and units already converted to human-readable formats.
+            
+            For example, a monthly running progress table should have headers like:
+            | Month | Number of Runs | Total Distance (miles) | Moving Time | Average Pace (min/mile) | Elevation Gain (ft/m) |
+            
+            DO NOT display raw seconds for pace or raw seconds for moving time in your response. Always convert these values to human-readable formats before presenting them.
         """
 
         messages.append({"role": RoleTypes.DEVELOPER, "content": response_prompt})

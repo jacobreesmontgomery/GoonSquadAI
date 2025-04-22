@@ -50,7 +50,7 @@ More specific questions should focus on exactly what was asked.
 - Apply filtering conditions (`WHERE`, `HAVING`, `ILIKE`) based on the user's request.
     - When names are referenced, always use **`ILIKE`** with wildcard `%` **at the beginning and end** (e.g., `ILIKE '%search_term%'`).
 - For trend analysis, use `date_trunc()` or similar functions to group by appropriate time periods.
-    - In PostgreSQL, when applying data_trunc() or other transformations in the SELECT clause, you must GROUP BY the exact expression, not just the alias.
+    - In PostgreSQL, when applying date_trunc() or other transformations in the SELECT clause, you must GROUP BY the exact expression, not just the alias.
         - Example: `GROUP BY date_trunc('month', full_datetime)`, not `GROUP BY month`
 - Use `LIMIT` when the user requests **a subset of results**.
 - Ensure the query is **optimized** and avoids unnecessary computations.
@@ -59,22 +59,37 @@ More specific questions should focus on exactly what was asked.
 - Format the query with **proper indentation** for clarity.
 - Do **NOT** query on non-existent columns or tables; make **NOTHING** up.
 
+### **Handling Running Metrics Calculations:**
+For correct running metrics calculations, use these formulas:
+
+- **Total Moving Time**: Use `SUM(moving_time_s)` NOT `AVG(moving_time_s)`
+- **Average Pace**: Calculate as `SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0) AS avg_pace_sec_per_mi`
+- **Elevation**: Use `SUM(total_elev_gain_ft)` for total elevation gain
+
+**IMPORTANT**: For monthly or time-period summaries, NEVER use AVG for cumulative metrics like distance or moving time. 
+Instead, use SUM to get the total for that period:
+
+```sql
+SELECT 
+  date_trunc('month', full_datetime) AS month,
+  COUNT(activity_id) AS run_count,
+  SUM(distance_mi) AS total_distance_mi,
+  SUM(moving_time_s) AS total_moving_time_s,
+  SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0) AS avg_pace_sec_per_mi,
+  SUM(total_elev_gain_ft) AS total_elevation_gain_ft
+FROM strava.activities
+GROUP BY date_trunc('month', full_datetime)
+ORDER BY month;
+```
+
 ### **Handling Data Anomalies:**
 - **Always prevent division by zero errors** by using `NULLIF()` for any divisor:
   - Example: `moving_time_s / NULLIF(distance_mi, 0)` instead of `moving_time_s / distance_mi`
-  - For pace calculations: `(moving_time_s / NULLIF(distance_mi, 0))` 
+  - For pace calculations: `(SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0))` 
 - When calculating averages or rates, consider adding **logical thresholds** to exclude outliers:
   - For pace calculations, add `WHERE distance_mi > 0.1` to exclude extremely short activities
   - For speed calculations, consider `WHERE avg_speed_ft_s > 1.0` to exclude unrealistic values
 - Use `CASE` statements to handle potential null values or outliers in calculations
-- When possible, perform data validation before calculations:
-  ```sql
-  SELECT 
-    CASE 
-      WHEN distance_mi > 0.1 THEN moving_time_s / distance_mi
-      ELSE NULL 
-    END AS pace_s_per_mi
-  ```
 
 ---
 
@@ -108,6 +123,8 @@ Respond with a **valid JSON object** containing the following attributes:
 - "confidence": "LOW | MEDIUM | HIGH",
 - "follow_ups": "Clarifying question if confidence is LOW, or an empty string if confidence is MEDIUM or HIGH"
 """
+
+# TODO - JACOB: potentially update the above for handling of niche fields (e.g., 'avg_power', 'sleep_rating', etc.)
 
 tag_response_schema = {
     "name": "GeneratedQueryOutput",
@@ -145,9 +162,13 @@ The database schema remains the same as previously provided. Follow all the same
 1. ANALYZE - Understand what the user is truly asking for
 2. PLAN - Determine what metrics would best answer their question
 3. GENERATE - Create an appropriate SQL query following these critical rules:
-   - For pace calculations use: (SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0))
-   - GROUP BY must include the exact expressions used in SELECT, not just aliases
+   - For monthly running metrics, always:
+     - Use SUM(moving_time_s) for total time, NOT AVG(moving_time_s)
+     - Calculate average pace as: SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0)
+     - SUM distance and elevation gain metrics
+     - GROUP BY date_trunc() expressions, not aliases
    - Use ILIKE with wildcards for name searches
+   - Use the WHERE clause to filter out numerical outliers (e.g., distance_mi > 0.1, avg_power > 0, etc.)
 
 ---
 
