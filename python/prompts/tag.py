@@ -86,6 +86,12 @@ ORDER BY month;
 - **Always prevent division by zero errors** by using `NULLIF()` for any divisor:
   - Example: `moving_time_s / NULLIF(distance_mi, 0)` instead of `moving_time_s / distance_mi`
   - For pace calculations: `(SUM(moving_time_s) / NULLIF(SUM(distance_mi), 0))` 
+- **IMPORTANT**: When calculating averages for metrics like perceived_exertion, sleep_rating, avg_power, or hr_avg:
+  - NEVER include zero values in averages as they skew results
+  - Always use filters to exclude zero values: `AVG(CASE WHEN perceived_exertion > 0 THEN perceived_exertion END)` or 
+  - `AVG(perceived_exertion) FILTER (WHERE perceived_exertion > 0)` instead of `AVG(perceived_exertion)`
+  - Example: `AVG(sleep_rating) FILTER (WHERE sleep_rating > 0)` 
+  - Example: `AVG(CASE WHEN avg_power > 0 THEN avg_power END) AS average_power`
 - When calculating averages or rates, consider adding **logical thresholds** to exclude outliers:
   - For pace calculations, add `WHERE distance_mi > 0.1` to exclude extremely short activities
   - For speed calculations, consider `WHERE avg_speed_ft_s > 1.0` to exclude unrealistic values
@@ -123,8 +129,6 @@ Respond with a **valid JSON object** containing the following attributes:
 - "confidence": "LOW | MEDIUM | HIGH",
 - "follow_ups": "Clarifying question if confidence is LOW, or an empty string if confidence is MEDIUM or HIGH"
 """
-
-# TODO - JACOB: potentially update the above for handling of niche fields (e.g., 'avg_power', 'sleep_rating', etc.)
 
 tag_response_schema = {
     "name": "GeneratedQueryOutput",
@@ -169,6 +173,10 @@ The database schema remains the same as previously provided. Follow all the same
      - GROUP BY date_trunc() expressions, not aliases
    - Use ILIKE with wildcards for name searches
    - Use the WHERE clause to filter out numerical outliers (e.g., distance_mi > 0.1, avg_power > 0, etc.)
+   - NEVER include zero values in averages as they skew results:
+     - Use: `AVG(perceived_exertion) FILTER (WHERE perceived_exertion > 0)` 
+     - Or: `AVG(CASE WHEN sleep_rating > 0 THEN sleep_rating END)` 
+     - Instead of: `AVG(avg_power)`
 
 ---
 
