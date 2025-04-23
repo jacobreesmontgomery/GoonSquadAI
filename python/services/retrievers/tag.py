@@ -101,7 +101,7 @@ class TAGRetriever(BaseRetriever):
         messages: list[dict[str, str]],
         schema_desc: str = None,
         gpt_model: str = None,
-    ) -> tuple[Sequence[Row[Any]], int, int, str] | str:
+    ) -> tuple[Sequence[Row[Any]], int, int, str, str] | str:
         """
         Executes the generated SQL query and returns the results.
 
@@ -110,7 +110,7 @@ class TAGRetriever(BaseRetriever):
         :param schema_desc: The schema description for the database.
         :param gpt_model: The GPT model to use for generating the query.
 
-        :return: The query results, the number of results, the completion ID, and the query to execute,
+        :return: The query results, the number of results, the completion ID, the query to execute, and the confidence level,
                     OR follow-up questions to ask the user.
         """
 
@@ -156,11 +156,11 @@ class TAGRetriever(BaseRetriever):
             json_result = GeneratedQueryOutput.parse_obj(json_result_data)
 
             follow_ups = json_result.follow_ups if json_result.follow_ups else None
-            confidence = json_result.confidence
-            if confidence == "LOW":
+            query_confidence = json_result.confidence
+            if query_confidence == "LOW":
                 if not follow_ups:
                     follow_ups = "Could you please elaborate on your question?"
-                self.error_msg = f"Confidence level is {confidence}. Follow-up questions: {follow_ups}."
+                self.error_msg = f"Confidence level is {query_confidence}. Follow-up questions: {follow_ups}."
                 self.logger.error(self.error_msg)
                 return follow_ups
             query_to_execute = self._clean_query(json_result.query)
@@ -195,12 +195,12 @@ class TAGRetriever(BaseRetriever):
             )
             raise query_execution_exception
 
-        return result, len(result), completion_id, query_to_execute
+        return result, len(result), completion_id, query_to_execute, query_confidence
 
     async def generate_natural_language_response(
         self,
         messages: list[dict[str, str]],
-        result: tuple[Sequence[Row[Any]], int, int, str],
+        result: tuple[Sequence[Row[Any]], int, int, str, str],
         gpt_model: str = None,
     ) -> APIResponsePayload[ChatResponse, ChatResponseMeta]:
         """
@@ -213,7 +213,7 @@ class TAGRetriever(BaseRetriever):
         :return: The API response payload.
         """
         # Unpack the tuple result
-        data, num_rows, completion_id, executed_query = result
+        data, num_rows, completion_id, executed_query, query_confidence = result
 
         # Display the results
         formatted_result = "\n".join([str(row) for row in data])
@@ -276,6 +276,8 @@ class TAGRetriever(BaseRetriever):
             DO NOT display raw seconds for pace or raw seconds for moving time in your response. Always convert these values to human-readable formats before presenting them.
         """
 
+        # TODO - JACOB: Add confidence rating for the final response, then add that to the meta data and render in FE via DB icon.
+
         messages.append({"role": RoleTypes.DEVELOPER, "content": response_prompt})
 
         response: ChatCompletion = await self.openai_service.process_request(
@@ -292,6 +294,8 @@ class TAGRetriever(BaseRetriever):
             meta=ChatResponseMeta(
                 completion_id=completion_id or None,
                 executed_query=executed_query or None,
+                query_results=formatted_result or None,
+                query_confidence=query_confidence or None,
             ),
         )
 
@@ -337,8 +341,7 @@ class TAGRetriever(BaseRetriever):
                     response=OpenAIMessage(role=RoleTypes.ASSISTANT, content=result)
                 ),
                 meta=ChatResponseMeta(
-                    completion_id=None,
-                    executed_query=None,
+                    confidence="LOW",
                 ),
             )
 

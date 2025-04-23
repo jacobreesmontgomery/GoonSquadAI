@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -38,9 +38,6 @@ const MessageBubble = styled.div<{ isUser: boolean }>`
 `;
 
 const DatabaseButton = styled.button`
-    position: absolute;
-    top: 0.35rem;
-    right: 0.35rem;
     padding: 0;
     border: none;
     background-color: transparent;
@@ -52,6 +49,14 @@ const DatabaseButton = styled.button`
     &:hover {
         opacity: 1;
     }
+`;
+
+const ButtonsContainer = styled.div`
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
+    display: flex;
+    gap: 0.5rem;
 `;
 
 const DatabaseIcon = styled(Database)`
@@ -76,18 +81,25 @@ const customStyles = {
 export default function Message({ openai_message, props }: MessageType) {
     // NOTE: AI responses are markdown-formatted, so we must render them as such.
     const { role, content } = openai_message as OpenAIMessage;
-    const { executed_query } = (props as MessageProps) || {};
+    const { executed_query, query_results, query_confidence } =
+        (props as MessageProps) || {};
     const [modalIsOpen, setIsOpen] = useState(false);
+    const [modalType, setModalType] = useState<"database" | null>(null);
 
-    function openModal() {
+    const openModal = useCallback(() => {
+        setModalType("database");
         setIsOpen(true);
-    }
+    }, []);
 
-    function closeModal() {
+    const closeModal = useCallback(() => {
+        setModalType(null);
         setIsOpen(false);
-    }
+    }, []);
 
-    const isUser = openai_message.role === ROLE_TYPES.USER;
+    const isUser = useMemo(
+        () => openai_message.role === ROLE_TYPES.USER,
+        [openai_message.role]
+    );
 
     return (
         <MessageContainer isUser={isUser}>
@@ -96,10 +108,14 @@ export default function Message({ openai_message, props }: MessageType) {
                     content
                 ) : (
                     <>
-                        {executed_query && (
-                            <DatabaseButton onClick={openModal}>
-                                <DatabaseIcon size={16} />
-                            </DatabaseButton>
+                        {(executed_query || query_results) && (
+                            <ButtonsContainer>
+                                {(executed_query || query_results) && (
+                                    <DatabaseButton onClick={openModal}>
+                                        <DatabaseIcon size={16} />
+                                    </DatabaseButton>
+                                )}
+                            </ButtonsContainer>
                         )}
                         <Markdown
                             remarkPlugins={[remarkGfm]}
@@ -114,7 +130,7 @@ export default function Message({ openai_message, props }: MessageType) {
                     isOpen={modalIsOpen}
                     onRequestClose={closeModal}
                     style={customStyles}
-                    contentLabel="Executed Query"
+                    contentLabel="Database Information"
                 >
                     <XCircle
                         size={20}
@@ -126,8 +142,21 @@ export default function Message({ openai_message, props }: MessageType) {
                             right: "0.35rem",
                         }}
                     />
-                    <h2>Here was the executed query:</h2>
-                    <div>{executed_query}</div>
+                    {query_confidence && (
+                        <h2>Query Confidence: {query_confidence}</h2>
+                    )}
+                    {executed_query && (
+                        <>
+                            <h2>Executed Query:</h2>
+                            <div>{executed_query}</div>
+                        </>
+                    )}
+                    {query_results && (
+                        <>
+                            <h2>Query Results:</h2>
+                            <pre>{JSON.stringify(query_results, null, 2)}</pre>
+                        </>
+                    )}
                 </ReactModal>
             </MessageBubble>
         </MessageContainer>

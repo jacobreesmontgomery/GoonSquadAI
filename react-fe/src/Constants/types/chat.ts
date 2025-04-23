@@ -1,6 +1,6 @@
 export type Conversation = {
     Messages: MessageType[];
-    Options: Options;
+    Options: MessageProps;
 };
 
 export enum ROLE_TYPES {
@@ -18,15 +18,12 @@ export type OpenAIMessage = {
 export type MessageProps = {
     completion_id?: number;
     executed_query?: string;
+    query_results?: string;
+    query_confidence?: string;
 };
 
 // NOTE: Should match OpenAIMessage model from the chat.py model class
 export type MessageType = {
     openai_message: OpenAIMessage;
     props?: MessageProps;
-};
-
-export type Options = {
-    completion_id?: number;
-    executed_query?: string;
 };

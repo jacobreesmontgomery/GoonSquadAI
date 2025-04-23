@@ -2,7 +2,12 @@ import { useCallback, useState } from "react";
 import axios from "axios";
 
 import { ChatContainer } from "Components/ChatContainer";
-import { Conversation, MessageType, ROLE_TYPES } from "Constants/types/chat";
+import {
+    Conversation,
+    MessageProps,
+    MessageType,
+    ROLE_TYPES,
+} from "Constants/types/chat";
 
 export default function Chat() {
     const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -52,6 +57,9 @@ export default function Chat() {
                     props: {
                         completion_id: res.data.meta.completion_id || null,
                         executed_query: res.data.meta.executed_query || null,
+                        query_results: res.data.meta.query_results || null,
+                        query_confidence:
+                            res.data.meta.query_confidence || null,
                     },
                 };
                 const newMessages: MessageType[] = [
@@ -68,7 +76,11 @@ export default function Chat() {
                                     res.data.meta.completion_id || null,
                                 executed_query:
                                     res.data.meta.executed_query || null,
-                            },
+                                query_results:
+                                    res.data.meta.query_results || null,
+                                query_confidence:
+                                    res.data.meta.query_confidence || null,
+                            } as MessageProps,
                         };
                     }
                     return {
@@ -78,7 +90,10 @@ export default function Chat() {
                             completion_id: res.data.meta.completion_id || null,
                             executed_query:
                                 res.data.meta.executed_query || null,
-                        },
+                            query_results: res.data.meta.query_results || null,
+                            query_confidence:
+                                res.data.meta.query_confidence || null,
+                        } as MessageProps,
                     };
                 });
             });
