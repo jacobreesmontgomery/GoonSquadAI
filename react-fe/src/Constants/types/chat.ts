@@ -20,6 +20,7 @@ export type MessageProps = {
     executed_query?: string;
     query_results?: string;
     query_confidence?: string;
+    answer_confidence?: string;
 };
 
 // NOTE: Should match OpenAIMessage model from the chat.py model class

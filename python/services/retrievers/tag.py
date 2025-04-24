@@ -14,6 +14,7 @@ from prompts.tag import (
     tag_prompt,
     tag_prompt_concise,
     tag_response_schema,
+    nl_response_schema,
 )
 from models.athlete import Activity, Athlete
 from models.chat import (
@@ -229,7 +230,7 @@ class TAGRetriever(BaseRetriever):
 
             {formatted_result}
 
-            Your task is to **write a natural language answer** to the user.
+            Your task is to **write a natural language answer** to the user and provide a confidence rating for your answer.
             Do **NOT** generate another SQL query. Simply provide a clear, well-written summary response.
 
             When presenting data, convert technical values to human-friendly formats:
@@ -274,18 +275,36 @@ class TAGRetriever(BaseRetriever):
             | Month | Number of Runs | Total Distance (miles) | Moving Time | Average Pace (min/mile) | Elevation Gain (ft/m) |
             
             DO NOT display raw seconds for pace or raw seconds for moving time in your response. Always convert these values to human-readable formats before presenting them.
+            
+            IMPORTANT: Your response must be in JSON format with two keys:
+            1. "answer": Your natural language response with all the data properly formatted
+            2. "confidence": Your confidence level in the answer as one of: "LOW", "MEDIUM", "HIGH"
+            
+            Use "LOW" if the data is sparse, unclear, or may not fully answer the question.
+            Use "MEDIUM" if the data seems relevant but may be incomplete or require assumptions.
+            Use "HIGH" if the data directly and completely answers the user's question.
         """
-
-        # TODO - JACOB: Add confidence rating for the final response, then add that to the meta data and render in FE via DB icon.
 
         messages.append({"role": RoleTypes.DEVELOPER, "content": response_prompt})
 
         response: ChatCompletion = await self.openai_service.process_request(
             messages=messages,
             model=gpt_model if gpt_model else self.openai_service.model,
+            response_schema=nl_response_schema,
         )
-        ai_response = response.choices[0].message.content
+
+        response_content = response.choices[0].message.content
+        try:
+            parsed_response = loads(response_content)
+            ai_response: str = parsed_response["answer"]
+            response_confidence: str = parsed_response["confidence"]
+        except Exception as e:
+            self.logger.error(f"Error parsing structured response: {e}")
+            ai_response = response_content
+            response_confidence = "MEDIUM"
+
         self.logger.debug(f"\n{ai_response}")
+        self.logger.debug(f"Response confidence: {response_confidence}")
 
         return APIResponsePayload(
             data=ChatResponse(
@@ -296,6 +315,7 @@ class TAGRetriever(BaseRetriever):
                 executed_query=executed_query or None,
                 query_results=formatted_result or None,
                 query_confidence=query_confidence or None,
+                answer_confidence=response_confidence or None,
             ),
         )
 

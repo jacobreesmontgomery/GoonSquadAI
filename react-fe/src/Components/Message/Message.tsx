@@ -72,17 +72,48 @@ const customStyles = {
         marginRight: "-50%",
         transform: "translate(-50%, -50%)",
         maxWidth: "50%",
+        maxHeight: "80vh",
         fontFamily: "monospace",
         borderRadius: "0.75rem",
         boxShadow: "0 0.125rem 0.25rem rgba(0, 0, 0, 0.1)",
+        overflow: "auto",
     },
 };
+
+const ModalContent = styled.div`
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+`;
+
+const QueryDisplay = styled.div`
+    overflow-x: auto;
+    background-color: #f5f5f5;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+`;
+
+const ResultsContainer = styled.pre`
+    overflow-x: auto;
+    max-width: 100%;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    background-color: #f5f5f5;
+    padding: 0.5rem;
+`;
 
 export default function Message({ openai_message, props }: MessageType) {
     // NOTE: AI responses are markdown-formatted, so we must render them as such.
     const { role, content } = openai_message as OpenAIMessage;
-    const { executed_query, query_results, query_confidence } =
-        (props as MessageProps) || {};
+    const {
+        executed_query,
+        query_results,
+        query_confidence,
+        answer_confidence,
+    } = (props as MessageProps) || {};
     const [modalIsOpen, setIsOpen] = useState(false);
     const [modalType, setModalType] = useState<"database" | null>(null);
 
@@ -142,21 +173,28 @@ export default function Message({ openai_message, props }: MessageType) {
                             right: "0.35rem",
                         }}
                     />
-                    {query_confidence && (
-                        <h2>Query Confidence: {query_confidence}</h2>
-                    )}
-                    {executed_query && (
-                        <>
-                            <h2>Executed Query:</h2>
-                            <div>{executed_query}</div>
-                        </>
-                    )}
-                    {query_results && (
-                        <>
-                            <h2>Query Results:</h2>
-                            <pre>{JSON.stringify(query_results, null, 2)}</pre>
-                        </>
-                    )}
+                    <ModalContent>
+                        {query_confidence && (
+                            <h2>Query Confidence: {query_confidence}</h2>
+                        )}
+                        {executed_query && (
+                            <>
+                                <h2>Executed Query:</h2>
+                                <QueryDisplay>{executed_query}</QueryDisplay>
+                            </>
+                        )}
+                        {query_results && (
+                            <>
+                                <h2>Query Results:</h2>
+                                <ResultsContainer>
+                                    {JSON.stringify(query_results, null, 2)}
+                                </ResultsContainer>
+                            </>
+                        )}
+                        {answer_confidence && (
+                            <h2>Answer Confidence: {answer_confidence}</h2>
+                        )}
+                    </ModalContent>
                 </ReactModal>
             </MessageBubble>
         </MessageContainer>

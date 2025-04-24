@@ -196,3 +196,25 @@ Return a valid JSON object with:
 - "confidence": "LOW | MEDIUM | HIGH",
 - "follow_ups": "Questions if confidence is LOW, or an empty string if confidence is MEDIUM or HIGH"
 """
+
+nl_response_schema = {
+    "name": "NaturalLanguageResponse",
+    "description": "The natural language response to the user's question.",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "answer": {
+                "type": "string",
+                "description": "The natural language answer to the user's question.",
+            },
+            "confidence": {
+                "type": "string",
+                "enum": ["LOW", "MEDIUM", "HIGH"],
+                "description": "Confidence level in the provided answer.",
+            },
+        },
+        "required": ["answer", "confidence"],
+        "additionalProperties": False,
+    },
+    "strict": True,
+}

@@ -72,6 +72,10 @@ class ChatResponseMeta(BaseModel):
         str | None,
         "The confidence level of the generated query (LOW, MEDIUM, HIGH).",
     ] = None
+    answer_confidence: Annotated[
+        str | None,
+        "The confidence level of the generated answer (LOW, MEDIUM, HIGH).",
+    ] = None
 
 
 class GeneratedQueryOutput(BaseModel):

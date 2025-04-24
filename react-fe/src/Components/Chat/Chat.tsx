@@ -60,6 +60,8 @@ export default function Chat() {
                         query_results: res.data.meta.query_results || null,
                         query_confidence:
                             res.data.meta.query_confidence || null,
+                        answer_confidence:
+                            res.data.meta.answer_confidence || null,
                     },
                 };
                 const newMessages: MessageType[] = [
@@ -80,6 +82,8 @@ export default function Chat() {
                                     res.data.meta.query_results || null,
                                 query_confidence:
                                     res.data.meta.query_confidence || null,
+                                answer_confidence:
+                                    res.data.meta.answer_confidence || null,
                             } as MessageProps,
                         };
                     }
@@ -93,6 +97,8 @@ export default function Chat() {
                             query_results: res.data.meta.query_results || null,
                             query_confidence:
                                 res.data.meta.query_confidence || null,
+                            answer_confidence:
+                                res.data.meta.answer_confidence || null,
                         } as MessageProps,
                     };
                 });
